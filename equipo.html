@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Equipo</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#17181b">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#17181b;--card:#232529;--card2:#2c2f34;--line:#3a3d43;--txt:#ececec;--mut:#9a9ea6;--acc:#f5c400}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;overflow:hidden}
+#top{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#101113;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#top .brand{font-size:17px;font-weight:700;margin-right:6px}
+#top .brand b{color:var(--acc)}
+a.lnk{color:var(--acc);text-decoration:none;font-size:14px;padding:6px 8px}
+button,label.btn{background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:0 14px;min-height:38px;font-size:14px;font-family:inherit;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+button:active,label.btn:active{background:#3a3d43}
+button.gold,label.btn.gold{background:var(--acc);color:#17181b;border-color:var(--acc);font-weight:700}
+label.btn input{display:none}
+#zoom{width:110px;accent-color:var(--acc)}
+#info{font-size:12.5px;color:var(--mut);margin-left:auto}
+#stage{flex:1;overflow:auto;padding:24px;-webkit-overflow-scrolling:touch}
+#chart{display:inline-block;min-width:100%;transform-origin:0 0;text-align:center}
+#empty{max-width:560px;margin:8vh auto;text-align:center;color:var(--mut);line-height:1.6}
+#empty h2{color:var(--txt);margin-bottom:6px}
+#empty ol{text-align:left;display:inline-block}
+.tree ul{padding-top:22px;position:relative;display:flex;justify-content:center;margin:0;padding-left:0}
+.tree li{list-style:none;text-align:center;position:relative;padding:22px 8px 0}
+.tree li::before,.tree li::after{content:"";position:absolute;top:0;right:50%;border-top:2px solid #555a62;width:50%;height:22px}
+.tree li::after{right:auto;left:50%;border-left:2px solid #555a62}
+.tree li:only-child::before,.tree li:only-child::after{display:none}
+.tree li:only-child{padding-top:0}
+.tree li:first-child::before,.tree li:last-child::after{border:0 none}
+.tree li:last-child::before{border-right:2px solid #555a62;border-radius:0 6px 0 0}
+.tree li:first-child::after{border-radius:6px 0 0 0}
+.tree ul ul::before{content:"";position:absolute;top:0;left:50%;border-left:2px solid #555a62;height:22px}
+.tree>ul>li{padding-top:0}
+.tree>ul>li::before,.tree>ul>li::after{display:none}
+.tree>ul::before{display:none}
+.p{display:inline-block;width:190px;background:var(--card);border:1px solid var(--line);border-top:3px solid var(--acc);border-radius:12px;padding:12px 10px;vertical-align:top}
+.p .ph{width:72px;height:72px;border-radius:50%;margin:0 auto 8px;background:var(--card2) center/cover no-repeat;border:2px solid var(--acc);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--acc)}
+.p .n{font-weight:700;font-size:14px;line-height:1.25}
+.p .c{font-size:12.5px;color:var(--acc);margin-top:2px;line-height:1.25}
+.p .a{font-size:12px;color:var(--mut);margin-top:2px}
+.p .t{font-size:12px;color:var(--txt);margin-top:4px}
+#msg{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--acc);color:#17181b;padding:10px 18px;border-radius:20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+#msg.on{opacity:1}
+@media print{body{background:#fff;color:#000;overflow:visible;height:auto}#top,#msg{display:none}#stage{overflow:visible;padding:0}.p{background:#fff;color:#000;border-color:#999}.p .n,.p .t{color:#000}.p .c{color:#8a6d00}.p .a{color:#555}.tree li::before,.tree li::after,.tree ul ul::before{border-color:#888!important}@page{size:landscape;margin:10mm}}
+</style>
+</head>
+<body>
+<div id="top">
+  <span class="brand">Equipo <b>·</b> organigrama</span>
+  <a class="lnk" href="index.html">⌂ Work Suite</a>
+  <label class="btn gold">📊 Cargar / actualizar Excel<input type="file" id="fxl" accept=".xlsx,.xlsm"></label>
+  <label class="btn">🖼 Cargar fotos<input type="file" id="fph" accept="image/*" multiple></label>
+  <button id="btnTpl">⬇ Plantilla</button>
+  <button id="btnPrint">🖨 Imprimir / PDF</button>
+  <input type="range" id="zoom" min="40" max="130" value="100" title="Zoom">
+  <span id="info"></span>
+</div>
+<div id="stage"><div id="chart" class="tree"></div></div>
+<div id="msg"></div>
+<script src="lib/exceljs.min.js"></script>
+<script>
+// ---------- utilidades ----------
+const $=s=>document.querySelector(s);
+const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(t){const m=$('#msg');m.textContent=t;m.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>m.classList.remove('on'),3200);}
+// Persistencia local (IndexedDB): la planilla y las fotos quedan guardadas para actualizar con un solo toque
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('work-suite-equipo',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function kvGet(k){try{const d=await idb();return await new Promise(r=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(undefined);});}catch(e){return undefined;}}
+async function kvSet(k,v){try{const d=await idb();await new Promise(r=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=r;t.onerror=r;});}catch(e){}}
+
+// ---------- estado ----------
+let people=[];            // {nombre,cargo,telefono,area,jefe,foto}
+let photos={};            // clave normalizada (nombre de archivo sin extensión) -> dataURL
+const COLS={nombre:['nombre','nombre completo','persona','trabajador'],cargo:['cargo','puesto','rol'],telefono:['telefono','fono','celular','movil','tel'],area:['area','planta','area planta','area o planta','departamento','unidad'],jefe:['jefe','reporta a','jefatura','supervisor','jefe directo'],foto:['foto','imagen','archivo foto','fotografia']};
+
+// ---------- Excel ----------
+function cellText(c){const v=c&&c.value;if(v==null)return'';if(typeof v==='object'){if(v.text)return String(v.text);if(v.richText)return v.richText.map(x=>x.text).join('');if(v.result!=null)return String(v.result);if(v.hyperlink)return String(v.text||v.hyperlink);return'';}return String(v).trim();}
+async function readExcel(file){
+  const wb=new ExcelJS.Workbook();await wb.xlsx.load(await file.arrayBuffer());
+  const ws=wb.worksheets[0];if(!ws)throw new Error('El libro está vacío');
+  // detectar fila de encabezados (primeras 10 filas)
+  let hr=0,map={};
+  for(let r=1;r<=Math.min(10,ws.rowCount);r++){
+    const m={};ws.getRow(r).eachCell((c,ci)=>{const h=norm(cellText(c));for(const k in COLS)if(!(k in m)&&COLS[k].includes(h))m[k]=ci;});
+    if(m.nombre&&Object.keys(m).length>Object.keys(map).length){hr=r;map=m;}
+  }
+  if(!hr)throw new Error('No encontré la columna «Nombre». Usa la plantilla.');
+  const out=[];
+  for(let r=hr+1;r<=ws.rowCount;r++){
+    const row=ws.getRow(r);const p={};
+    for(const k in COLS)p[k]=map[k]?cellText(row.getCell(map[k])):'';
+    if(p.nombre)out.push(p);
+  }
+  return out;
+}
+async function downloadTemplate(){
+  const wb=new ExcelJS.Workbook();const ws=wb.addWorksheet('Equipo');
+  ws.columns=[{header:'Nombre',width:28},{header:'Cargo',width:28},{header:'Teléfono',width:16},{header:'Área / Planta',width:22},{header:'Reporta a',width:28},{header:'Foto',width:22}];
+  ws.addRows([['Ana Pérez','Gerente de Planta','+56 9 1111 1111','Planta Valdivia','','ana perez.jpg'],['Luis Soto','Jefe de Mantención','+56 9 2222 2222','Mantención','Ana Pérez','luis soto.jpg'],['Marta Rojas','Inspector Calderas','+56 9 3333 3333','Calderas','Luis Soto','']]);
+  ws.getRow(1).font={bold:true};
+  const buf=await wb.xlsx.writeBuffer();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/octet-stream'}));a.download='Plantilla-Equipo.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+
+// ---------- fotos ----------
+function shrink(file){return new Promise(res=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{const S=240,k=Math.min(1,S/Math.min(img.width,img.height));const w=Math.round(img.width*k),h=Math.round(img.height*k);const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(u);res(cv.toDataURL('image/jpeg',.82));};img.onerror=()=>{URL.revokeObjectURL(u);res(null);};img.src=u;});}
+async function addPhotos(files){
+  let n=0;for(const f of files){const d=await shrink(f);if(d){photos[norm(f.name.replace(/\.[^.]+$/,''))]=d;n++;}}
+  await kvSet('photos',photos);render();toast(n+' foto(s) cargada(s)');
+}
+function photoOf(p){
+  const byField=p.foto&&photos[norm(p.foto.replace(/\.[^.]+$/,''))];
+  return byField||photos[norm(p.nombre)]||null;
+}
+
+// ---------- árbol ----------
+function buildForest(){
+  const byName=new Map();people.forEach(p=>{p.kids=[];byName.set(norm(p.nombre),p);});
+  const roots=[];
+  people.forEach(p=>{const j=p.jefe&&byName.get(norm(p.jefe));if(j&&j!==p)j.kids.push(p);else roots.push(p);});
+  // evitar ciclos: si algo no es alcanzable desde las raíces, se agrega como raíz
+  const seen=new Set();
+  const walk=n=>{if(seen.has(n))return;seen.add(n);n.kids.forEach(walk);};
+  roots.forEach(walk);
+  people.forEach(p=>{if(!seen.has(p)){roots.push(p);walk(p);}});
+  return roots;
+}
+function nodeHTML(p,depth){
+  if(depth>40)return'';
+  const ph=photoOf(p);const ini=esc((p.nombre.match(/\p{L}/gu)||[]).slice(0,1).join('').toUpperCase());
+  const card=`<div class="p"><div class="ph"${ph?` style="background-image:url(${ph})"`:''}>${ph?'':ini}</div><div class="n">${esc(p.nombre)}</div>${p.cargo?`<div class="c">${esc(p.cargo)}</div>`:''}${p.area?`<div class="a">${esc(p.area)}</div>`:''}${p.telefono?`<div class="t">☎ ${esc(p.telefono)}</div>`:''}</div>`;
+  const kids=p.kids&&p.kids.length?'<ul>'+p.kids.map(k=>nodeHTML(k,depth+1)).join('')+'</ul>':'';
+  return`<li>${card}${kids}</li>`;
+}
+function render(){
+  const c=$('#chart');
+  if(!people.length){c.innerHTML='<div id="empty"><h2>Organigrama automático</h2><p>Carga una planilla de Excel con las columnas <b>Nombre, Cargo, Teléfono, Área / Planta, Reporta a, Foto</b>, y las fotos de la gente. Todo queda guardado en la tablet.</p><ol><li>Toca <b>Plantilla</b> si necesitas el formato.</li><li>Toca <b>Cargar / actualizar Excel</b>.</li><li>Toca <b>Cargar fotos</b> y elige las de la carpeta (el nombre del archivo debe coincidir con la columna Foto o con el nombre de la persona).</li></ol></div>';$('#info').textContent='';return;}
+  const roots=buildForest();
+  c.innerHTML='<ul>'+roots.map(r=>nodeHTML(r,0)).join('')+'</ul>';
+  const withPh=people.filter(photoOf).length;
+  $('#info').textContent=people.length+' personas · '+withPh+' con foto';
+}
+
+// ---------- eventos ----------
+$('#fxl').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{people=await readExcel(f);await kvSet('people',people);render();toast('Organigrama actualizado: '+people.length+' personas');}
+  catch(err){toast('Error: '+(err.message||err));}
+});
+$('#fph').addEventListener('change',e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)addPhotos(fs);});
+$('#btnTpl').onclick=downloadTemplate;
+$('#btnPrint').onclick=()=>{$('#chart').style.transform='none';window.print();applyZoom();};
+function applyZoom(){const z=$('#zoom').value/100;$('#chart').style.transform='scale('+z+')';}
+$('#zoom').addEventListener('input',applyZoom);
+(async()=>{people=(await kvGet('people'))||[];photos=(await kvGet('photos'))||{};render();})();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+</script>
+</body>
+</html>
