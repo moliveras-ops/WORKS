@@ -367,7 +367,7 @@ body.rc #btnRibbon{transform:rotate(180deg)}
  <div class="g"><div class="gb"><div class="col"><span style="font-size:12px;color:#555">Estilo de tabla</span>
     <select class="s" id="selTbl"><option value="">Elegir…</option><option value="grid">Rejilla</option><option value="blue">Encabezado azul</option><option value="zebra">Filas alternas</option><option value="nob">Sin bordes</option></select></div></div><div class="gl">Estilos de tabla</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="tvTop"><span class="ic">⤒</span>Arriba</button><button class="b bb" data-act="tvMid"><span class="ic">↕</span>Centro</button><button class="b bb" data-act="tvBot"><span class="ic">⤓</span>Abajo</button></div><div class="gl">Alineación vertical</div></div>
-  <div class="g"><div class="gb"><button class="b bb" data-act="colStats"><span class="ic">Σ</span>Estadística de columna</button><button class="b bb" data-act="tblSortA"><span class="ic">A↓</span>Ordenar A→Z</button><button class="b bb" data-act="tblSortD"><span class="ic">Z↓</span>Ordenar Z→A</button></div><div class="gl">Datos</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="condFmt"><span class="ic">🎨</span>Formato condicional</button><button class="b bb" data-act="colStats"><span class="ic">Σ</span>Estadística de columna</button><button class="b bb" data-act="tblSortA"><span class="ic">A↓</span>Ordenar A→Z</button><button class="b bb" data-act="tblSortD"><span class="ic">Z↓</span>Ordenar Z→A</button></div><div class="gl">Datos</div></div>
  </div>
 </div>
 
@@ -723,6 +723,61 @@ function cellNow(){return lastCell&&doc.contains(lastCell)?lastCell:null;}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function showPanel(h){panel.innerHTML=h;panel.classList.add('show');}
 function hidePanel(){panel.classList.remove('show');panel.innerHTML='';}
+
+// ---------- Formato condicional de tablas ----------
+const CF_COLORS={rojo:['#f8c9c9','#9c0006'],amarillo:['#fff2a8','#7a5b00'],verde:['#c6efce','#006100'],azul:['#cfe0f7','#0b3d91'],gris:['#e3e3e3','#333333']};
+const CF_OPS={'>':'mayor que','>=':'mayor o igual a','<':'menor que','<=':'menor o igual a','=':'igual a','<>':'distinto de','between':'entre','contains':'contiene','empty':'está vacía'};
+function cfRules(t){try{return JSON.parse(t.dataset.cf||'[]');}catch(e){return[];}}
+function cfTest(r,txt){
+  const n=num(txt),t=String(txt||'').trim().toLowerCase();
+  if(r.op==='empty')return t==='';
+  if(r.op==='contains')return t!==''&&t.includes(String(r.a).toLowerCase());
+  const a=num(r.a),b=num(r.b);
+  if(isNaN(n)){return(r.op==='='&&t===String(r.a).trim().toLowerCase())||(r.op==='<>'&&t!==String(r.a).trim().toLowerCase()&&t!=='');}
+  if(isNaN(a))return false;
+  switch(r.op){case'>':return n>a;case'>=':return n>=a;case'<':return n<a;case'<=':return n<=a;case'=':return n===a;case'<>':return n!==a;case'between':return !isNaN(b)&&n>=Math.min(a,b)&&n<=Math.max(a,b);}
+  return false;
+}
+function cfApply(t){
+  [...t.querySelectorAll('[data-cfa]')].forEach(td=>{td.style.backgroundColor='';td.style.color='';td.style.fontWeight='';td.removeAttribute('data-cfa');if(!td.getAttribute('style'))td.removeAttribute('style');});
+  const rules=cfRules(t);if(!rules.length)return;
+  [...t.rows].forEach((tr,ri)=>[...tr.cells].forEach(td=>{
+    for(const r of rules){
+      if(r.scope!=='all'&&td.cellIndex!==r.col)continue;
+      if(r.hdr!==false&&ri===0&&t.rows.length>1)continue;
+      if(cfTest(r,td.textContent)){const c=CF_COLORS[r.color]||CF_COLORS.rojo;td.style.backgroundColor=c[0];td.style.color=c[1];if(r.bold)td.style.fontWeight='bold';td.setAttribute('data-cfa','1');break;}
+    }
+  }));
+}
+let cfPending=null;
+doc.addEventListener('input',()=>{const c=cellNow();const t=c&&c.closest('table');if(t&&t.dataset.cf){clearTimeout(cfPending);cfPending=setTimeout(()=>{cfApply(t);},400);}});
+acts.condFmt=function(){
+  const c=cellNow();if(!c){toast('Coloca el cursor en una celda de la tabla');return;}
+  const t=c.closest('table'),col=c.cellIndex;
+  const head=t.rows[0]&&t.rows[0].cells[col]?t.rows[0].cells[col].textContent.trim():'';
+  const list=cfRules(t).map((r,i)=>'<span style="display:inline-flex;gap:6px;align-items:center;background:'+(CF_COLORS[r.color]||CF_COLORS.rojo)[0]+';color:'+(CF_COLORS[r.color]||CF_COLORS.rojo)[1]+';border-radius:6px;padding:5px 8px;font-size:13px">'+(r.scope==='all'?'Toda la tabla':'Col. '+(r.col+1))+': '+esc(CF_OPS[r.op])+(r.op==='empty'?'':' '+esc(r.a)+(r.op==='between'?' y '+esc(r.b):''))+' <a href="#" data-del="'+i+'" style="color:inherit;font-weight:700;text-decoration:none">✕</a></span>').join('');
+  showPanel('<b>Formato condicional</b>'
+   +'<select id="cfScope" class="s"><option value="col">Columna '+(col+1)+(head?' («'+esc(head.slice(0,18))+'»)':'')+'</option><option value="all">Toda la tabla</option></select>'
+   +'<select id="cfOp" class="s">'+Object.keys(CF_OPS).map(k=>'<option value="'+k+'">'+CF_OPS[k]+'</option>').join('')+'</select>'
+   +'<input type="text" id="cfA" placeholder="valor" style="width:100px"><input type="text" id="cfB" placeholder="y valor" style="width:100px" hidden>'
+   +'<select id="cfCol" class="s">'+Object.keys(CF_COLORS).map(k=>'<option value="'+k+'">'+k[0].toUpperCase()+k.slice(1)+'</option>').join('')+'</select>'
+   +'<label style="font-size:13px"><input type="checkbox" id="cfBold"> Negrita</label>'
+   +'<button id="cfAdd">Agregar regla</button><button class="sec" id="cfX">Cerrar</button>'
+   +(list?'<div style="flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="font-size:13px;color:#555">Reglas:</span>'+list+' <button class="sec" id="cfClr">Quitar todas</button></div>':''));
+  const sync=()=>{const op=$('#cfOp').value;$('#cfA').hidden=op==='empty';$('#cfB').hidden=op!=='between';};
+  $('#cfOp').onchange=sync;sync();
+  $('#cfAdd').onclick=()=>{
+    const op=$('#cfOp').value,a=$('#cfA').value.trim(),b=$('#cfB').value.trim();
+    if(op!=='empty'&&a===''){toast('Escribe el valor de comparación');return;}
+    if(op==='between'&&b===''){toast('Escribe los dos valores');return;}
+    if(!['contains','empty','=','<>'].includes(op)&&isNaN(num(a))){toast('Ese valor debe ser un número');return;}
+    const rules=cfRules(t);rules.push({scope:$('#cfScope').value,col:col,op:op,a:a,b:b,color:$('#cfCol').value,bold:$('#cfBold').checked});
+    t.dataset.cf=JSON.stringify(rules);cfApply(t);markDirty();acts.condFmt();toast('Regla aplicada');
+  };
+  panel.querySelectorAll('[data-del]').forEach(x=>x.onclick=ev=>{ev.preventDefault();const rules=cfRules(t);rules.splice(+x.dataset.del,1);if(rules.length)t.dataset.cf=JSON.stringify(rules);else delete t.dataset.cf;cfApply(t);markDirty();acts.condFmt();});
+  const clr=$('#cfClr');if(clr)clr.onclick=()=>{delete t.dataset.cf;cfApply(t);markDirty();acts.condFmt();};
+  $('#cfX').onclick=hidePanel;
+};
 function insertTable(r,c,head){
   r=Math.max(1,r||1);c=Math.max(1,c||1);let h='<table><tbody>';
   for(let i=0;i<r;i++){h+='<tr>';for(let j=0;j<c;j++)h+=(head&&i===0?'<th>':'<td>')+'<br>'+(head&&i===0?'</th>':'</td>');h+='</tr>';}
