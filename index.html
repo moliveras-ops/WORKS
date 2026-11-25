@@ -126,6 +126,20 @@ label.cp{color:#e8e9eb}
 #toast{background:#f5b301;color:#1a1a1a}
 #doc{color:#000}
 #doc td.sel,#doc th.sel{outline-color:#f5b301}
+#ai{display:none;position:fixed;left:0;right:0;bottom:0;z-index:18;background:#2a2d32;border-top:2px solid #f5b301;padding:10px 14px 14px;max-height:75vh;color:#e8e9eb;box-shadow:0 -10px 24px rgba(0,0,0,.5)}
+#ai.show{display:flex;flex-direction:column;gap:8px}
+#ai .aih{display:flex;align-items:center;gap:10px}
+#aiModel{font-size:12px;color:#a9adb4;background:#1f2125;border-radius:10px;padding:2px 9px}
+#ai button{min-height:40px;padding:0 14px;border:1px solid #f5b301;background:#f5b301;color:#1a1a1a;border-radius:7px;font-size:14px;font-family:inherit}
+#ai button.sec,#ai button.aix{background:#2a2d32;color:#f5b301}
+#ai button:disabled{opacity:.45}
+#ai input[type=text]{width:100%;min-height:42px;padding:0 10px;border-radius:7px;border:1px solid #4a4e56;background:#17181b;color:#e8e9eb;font-size:15px}
+#aiAsk{display:flex;flex-direction:column;gap:8px}#aiAsk[hidden]{display:none}
+#aiAsk label{font-size:13px;color:#a9adb4;display:flex;gap:6px;align-items:center}
+#aiStat{font-size:13px;color:#a9adb4;min-height:18px}
+#aiStat.err{color:#ff9d8a}
+#aiOut{width:100%;background:#17181b;color:#e8e9eb;border:1px solid #4a4e56;border-radius:7px;padding:10px;font:14px/1.45 system-ui,sans-serif;resize:vertical}
+#ai .aib{display:flex;gap:8px;flex-wrap:wrap}
 #tabs .tab.sm{padding:0 12px;font-size:17px}
 #tabs .tab.gold{color:#f5b301;font-weight:700;font-size:14px}
 #tabAct{display:none}
@@ -136,6 +150,7 @@ body.rc.peek #tools{display:block;position:absolute;left:0;right:0;top:var(--rt,
 body.rc #btnRibbon{transform:rotate(180deg)}
 
 @media print{
+ #ai{display:none!important}
  #status{display:none!important}
  body{background:#fff;overflow:visible;display:block}
  #top,#tabs,#tools,#unsaved,#back,#panel,#toast,#hdrPrev,#ftrPrev{display:none!important}
@@ -165,6 +180,7 @@ body.rc #btnRibbon{transform:rotate(180deg)}
   <button class="tab" data-tab="disposicion">Disposición</button>
   <button class="tab" data-tab="referencias">Referencias</button>
   <button class="tab" data-tab="revisar">Revisar</button>
+  <button class="tab" data-tab="ia">IA</button>
   <button class="tab" data-tab="vista">Vista</button>
   <button class="tab tabtable" id="tabTable" data-tab="tabla" hidden>Tabla</button>
   <span style="flex:1"></span>
@@ -282,6 +298,26 @@ body.rc #btnRibbon{transform:rotate(180deg)}
   <div class="g"><div class="gb"><button class="b bb" data-act="dictate"><span class="ic">🎤</span>Dictado por voz</button></div><div class="gl">Voz</div></div>
  </div>
 
+ <div class="rb" id="rb-ia">
+  <div class="g"><div class="gb">
+    <button class="b bb" data-ai="fix"><span class="ic">✔</span>Corregir</button>
+    <button class="b bb" data-ai="improve"><span class="ic">✎</span>Mejorar redacción</button>
+    <button class="b bb" data-ai="sum"><span class="ic">≡</span>Resumir</button>
+    <button class="b bb" data-ai="expand"><span class="ic">⇲</span>Ampliar</button>
+    <button class="b bb" data-ai="formal"><span class="ic">▣</span>Tono técnico</button>
+    <button class="b bb" data-ai="en"><span class="ic">EN</span>Traducir al inglés</button>
+  </div><div class="gl">Sobre el texto seleccionado</div></div>
+  <div class="g"><div class="gb">
+    <button class="b bb" data-ai="concl"><span class="ic">✓</span>Conclusiones</button>
+    <button class="b bb" data-ai="recs"><span class="ic">➜</span>Recomendaciones</button>
+    <button class="b bb" data-ai="exec"><span class="ic">▤</span>Resumen ejecutivo</button>
+  </div><div class="gl">Redactar desde el documento</div></div>
+  <div class="g"><div class="gb">
+    <button class="b bb" data-ai="free"><span class="ic">💬</span>Preguntar a Claude</button>
+    <button class="b bb" data-act="aiSettings"><span class="ic">⚙</span>Clave y modelo</button>
+  </div><div class="gl">Asistente</div></div>
+ </div>
+
  <div class="rb" id="rb-vista">
   <div class="g"><div class="gb"><button class="b bb" data-act="zoomOut"><span class="ic">−</span>Alejar</button><button class="b bb" data-act="zoom100"><span class="ic">100</span>100 %</button><button class="b bb" data-act="zoomIn"><span class="ic">+</span>Acercar</button><button class="b bb" data-act="zoomFit"><span class="ic">↔</span>Ancho de página</button></div><div class="gl">Zoom</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="marks"><span class="ic">¶</span>Marcas de formato</button></div><div class="gl">Mostrar</div></div>
@@ -299,6 +335,10 @@ body.rc #btnRibbon{transform:rotate(180deg)}
  </div>
 </div>
 
+<div id="ai"><div class="aih"><b id="aiTitle">Asistente</b><span id="aiModel"></span><span style="flex:1"></span><button class="aix" id="aiX">Cerrar</button></div>
+  <div id="aiAsk" hidden><input type="text" id="aiQ" placeholder="Escribe tu instrucción, por ejemplo: redacta un párrafo de antecedentes"><label><input type="checkbox" id="aiCtx" checked> Incluir el texto seleccionado (o el documento si no hay selección)</label><button id="aiGo">Enviar</button></div>
+  <div id="aiStat"></div><textarea id="aiOut" rows="8" spellcheck="true"></textarea>
+  <div class="aib"><button id="aiRep">Reemplazar selección</button><button id="aiIns" class="sec">Insertar debajo</button><button id="aiCopy" class="sec">Copiar</button><button id="aiRetry" class="sec">Reintentar</button></div></div>
 <div id="unsaved" hidden><span class="ico">i</span><b>ARCHIVO NO GUARDADO</b><u>Los cambios se guardan temporalmente en este equipo.</u><button data-act="save">Guardar</button></div>
 <div id="back" hidden><div class="bk">
   <button data-act="bkClose">←  Volver al documento</button>
@@ -424,6 +464,13 @@ const acts={
   fullscreen(){const d=document;if(d.fullscreenElement){d.exitFullscreen();}else if(d.documentElement.requestFullscreen){d.documentElement.requestFullscreen().catch(()=>toast('Pantalla completa no disponible'));}else toast('Pantalla completa no disponible');},
   undoA(){restoreSel();document.execCommand('undo');markDirty();},
   redoA(){restoreSel();document.execCommand('redo');markDirty();},
+  aiSettings(){const m=LS.get('w_model')||'auto';
+    showPanel('<label>Clave de la API de Claude <input type="password" id="aiKey" placeholder="sk-ant-…" style="width:260px" value="'+esc(LS.get('w_key')||'')+'"></label><label>Modelo <select id="aiMod"><option value="auto">Automático (el mejor para cada tarea)</option><option value="claude-haiku-5-5">Haiku 5.5 · rápido y económico</option><option value="claude-sonnet-5-5">Sonnet 5.5 · equilibrio</option><option value="claude-opus-5-5">Opus 5.5 · máxima calidad</option></select></label><button id="aiSave">Guardar</button><button class="sec" id="aiTest">Probar conexión</button><button class="sec" id="aiDel">Borrar clave</button><button class="sec" id="aiClose">Cerrar</button><div style="flex-basis:100%;font-size:12.5px;color:#a9adb4;line-height:1.4">La clave se obtiene en console.anthropic.com y queda guardada solo en este dispositivo. Usa una clave propia con límite de gasto. El texto que envíes a la IA sale del dispositivo hacia Anthropic; no incluyas datos que no puedas compartir. Requiere internet.</div>');
+    $('#aiMod').value=m;
+    $('#aiSave').onclick=()=>{LS.set('w_key',$('#aiKey').value.trim());LS.set('w_model',$('#aiMod').value);toast('Ajustes guardados');hidePanel();};
+    $('#aiDel').onclick=()=>{LS.set('w_key','');$('#aiKey').value='';toast('Clave borrada de este dispositivo');};
+    $('#aiTest').onclick=async()=>{LS.set('w_key',$('#aiKey').value.trim());try{await callClaude('claude-haiku-5-5','Responde solo con la palabra OK.','Prueba');toast('Conexión correcta');}catch(e){toast(aiErr(e),5000);}};
+    $('#aiClose').onclick=hidePanel;},
   noHi(){restoreSel();document.execCommand('hiliteColor',false,'transparent');markDirty();},
   cam(){restoreSel();$('#fileCam').click();},
   hr(){restoreSel();document.execCommand('insertHTML',false,'<hr><p><br></p>');markDirty();},
@@ -545,6 +592,66 @@ doc.addEventListener('pointerup',()=>{if(!painter)return;setTimeout(()=>{const s
   const m=p.color.match(/\d+/g);if(m)document.execCommand('foreColor',false,'#'+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,'0')).join(''));
   document.execCommand('fontName',false,p.font);applySize(p.pt);},60);});
 let rec=null;
+async function callClaude(model,system,user){
+  const key=(LS.get('w_key')||'').trim();if(!key)throw new Error('NOKEY');
+  let r;try{r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:model,max_tokens:2048,system:system,messages:[{role:'user',content:user}]})});}
+  catch(e){const er=new Error('NET');throw er;}
+  if(!r.ok){let m='';try{m=(await r.json()).error.message;}catch(e){}const er=new Error(m||('HTTP '+r.status));er.status=r.status;throw er;}
+  const j=await r.json();return (j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();}
+function aiErr(e){if(e.message==='NOKEY')return 'Falta la clave de la API. Ábrela en IA, Clave y modelo.';if(e.message==='NET')return 'No hay conexión con Claude. Revisa tu internet.';
+  if(e.status===401)return 'La clave no es válida.';if(e.status===429)return 'Se alcanzó el límite de uso. Espera un momento.';if(e.status===404)return 'El modelo elegido no está disponible para tu clave.';return 'Error de Claude: '+e.message;}
+const AI_SYS='Eres un asistente de redacción técnica para ingenieros de inspección industrial en Chile (calderas recuperadoras, plantas de celulosa, mediciones de espesor, normas ASME). Escribe en español de Chile con tono técnico claro y preciso. No inventes datos, cifras, normas ni hallazgos que no estén en el texto entregado. Responde únicamente con el texto resultante, sin introducciones, sin explicaciones y sin Markdown, en párrafos simples.';
+const AI_TASKS={
+  fix:{t:'Corregir ortografía y gramática',m:'claude-haiku-5-5',sel:true,p:'Corrige la ortografía, la gramática y la puntuación del siguiente texto sin cambiar su contenido, sus cifras ni su estilo:\n\n'},
+  improve:{t:'Mejorar redacción',m:'claude-sonnet-5-5',sel:true,p:'Mejora la redacción del siguiente texto para que sea más clara, precisa y profesional. Conserva todas las cifras y hechos:\n\n'},
+  sum:{t:'Resumir',m:'claude-haiku-5-5',sel:true,p:'Resume el siguiente texto en pocas frases, conservando las cifras clave:\n\n'},
+  expand:{t:'Ampliar',m:'claude-sonnet-5-5',sel:true,p:'Amplía y desarrolla el siguiente texto con mayor detalle técnico, sin agregar datos nuevos que no estén en él:\n\n'},
+  formal:{t:'Tono técnico formal',m:'claude-sonnet-5-5',sel:true,p:'Reescribe el siguiente texto con un tono técnico y formal propio de un informe de inspección, conservando cifras y hechos:\n\n'},
+  en:{t:'Traducir al inglés',m:'claude-sonnet-5-5',sel:true,p:'Traduce al inglés técnico el siguiente texto:\n\n'},
+  concl:{t:'Redactar conclusiones',m:'claude-sonnet-5-5',doc:true,p:'A partir del siguiente informe de inspección, redacta la sección de Conclusiones. Usa solo la información del informe:\n\n'},
+  recs:{t:'Redactar recomendaciones',m:'claude-sonnet-5-5',doc:true,p:'A partir del siguiente informe de inspección, redacta la sección de Recomendaciones, ordenadas por prioridad. Usa solo la información del informe:\n\n'},
+  exec:{t:'Resumen ejecutivo',m:'claude-sonnet-5-5',doc:true,p:'A partir del siguiente informe de inspección, redacta un resumen ejecutivo de un párrafo. Usa solo la información del informe:\n\n'},
+  free:{t:'Preguntar a Claude',m:'claude-sonnet-5-5',free:true}
+};
+let aiLast=null;
+function aiModel(task){const m=LS.get('w_model')||'auto';return m==='auto'?task.m:m;}
+function selText(){return savedRange?String(savedRange).trim():'';}
+function docText(){return (doc.innerText||'').trim().slice(0,60000);}
+function openAI(key){
+  const task=AI_TASKS[key];if(!task)return;
+  if(!(LS.get('w_key')||'').trim()){acts.aiSettings();toast('Primero pega tu clave de la API de Claude',4500);return;}
+  const sel=selText();
+  if(task.sel&&!sel){toast('Selecciona primero el texto que quieres procesar');return;}
+  aiLast={key:key,sel:sel,range:savedRange?savedRange.cloneRange():null};
+  $('#aiTitle').textContent=task.t;$('#aiModel').textContent=aiModel(task).replace('claude-','').replace('-5-5',' 5.5');
+  $('#aiOut').value='';$('#aiStat').textContent='';$('#aiStat').classList.remove('err');
+  $('#aiAsk').hidden=!task.free;$('#ai').classList.add('show');
+  if(task.free){$('#aiQ').value='';$('#aiQ').focus();setBtns(false);}else runAI();
+}
+function setBtns(on){['#aiRep','#aiIns','#aiCopy'].forEach(i=>$(i).disabled=!on);}
+async function runAI(){
+  const task=AI_TASKS[aiLast.key];let user;
+  if(task.free){const q=$('#aiQ').value.trim();if(!q){$('#aiStat').textContent='Escribe una instrucción.';return;}
+    const ctx=$('#aiCtx').checked?(aiLast.sel||docText()):'';user=q+(ctx?'\n\nTexto de contexto:\n\n'+ctx:'');}
+  else if(task.doc){const t=docText();if(!t){$('#aiStat').textContent='El documento está vacío.';return;}user=task.p+t;}
+  else user=task.p+aiLast.sel;
+  const mod=aiModel(task);setBtns(false);$('#aiStat').classList.remove('err');$('#aiStat').textContent='Consultando a Claude…';$('#aiOut').value='';
+  try{const out=await callClaude(mod,AI_SYS,user);$('#aiOut').value=out;$('#aiStat').textContent='Listo. Revisa el texto antes de usarlo; puedes editarlo aquí.';setBtns(!!out);}
+  catch(e){$('#aiStat').classList.add('err');$('#aiStat').textContent=aiErr(e);}
+}
+function aiHtml(t){return t.split(/\n{2,}|\n/).map(x=>x.trim()).filter(Boolean).map(x=>'<p>'+esc(x)+'</p>').join('');}
+$('#tools').addEventListener('click',e=>{const b=e.target.closest('[data-ai]');if(b)openAI(b.dataset.ai);});
+$('#aiX').onclick=()=>$('#ai').classList.remove('show');
+$('#aiGo').onclick=()=>runAI();
+$('#aiRetry').onclick=()=>{if(aiLast)runAI();};
+$('#aiCopy').onclick=()=>{const t=$('#aiOut').value;try{navigator.clipboard.writeText(t).then(()=>toast('Copiado'),()=>{$('#aiOut').select();});}catch(e){$('#aiOut').select();}};
+$('#aiRep').onclick=()=>{const t=$('#aiOut').value;if(!t)return;
+  if(aiLast&&aiLast.range){const s=getSelection();doc.focus();s.removeAllRanges();s.addRange(aiLast.range);}
+  const has=aiLast&&aiLast.sel;document.execCommand('insertHTML',false,has?aiHtml(t).replace(/^<p>|<\/p>$/g,''):aiHtml(t));markDirty();$('#ai').classList.remove('show');};
+$('#aiIns').onclick=()=>{const t=$('#aiOut').value;if(!t)return;let blk=null;
+  if(aiLast&&aiLast.range){let n=aiLast.range.endContainer;n=n.nodeType===3?n.parentNode:n;blk=n.closest&&n.closest('p,h1,h2,h3,li,td,th,blockquote');}
+  const h=aiHtml(t);if(blk&&doc.contains(blk)&&!/^(TD|TH)$/.test(blk.tagName)){(blk.tagName==='LI'?blk.closest('ul,ol')||blk:blk).insertAdjacentHTML('afterend',h);}else doc.insertAdjacentHTML('beforeend',h);
+  markDirty();$('#ai').classList.remove('show');};
 const LS={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
 function applyView(){const b=document.body;b.classList.toggle('rc',LS.get('w_rc')==='1');b.classList.toggle('compact',LS.get('w_cp')==='1');b.classList.remove('peek');
   $('#btnRibbon').title=b.classList.contains('rc')?'Expandir la cinta de opciones':'Contraer la cinta de opciones';}
