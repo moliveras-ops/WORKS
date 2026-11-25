@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Works Editor</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#1f4e79">
+<meta name="theme-color" content="#17181b">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
@@ -94,6 +94,47 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
 #symgrid{display:flex;flex-wrap:wrap;gap:6px}
 #symgrid button{min-width:44px;background:#fff;color:var(--txt);border-color:var(--borde);font-size:17px}
 @media (max-width:760px){#sheet{padding:28px 18px!important}}
+/* ===== Tema grafito oscuro, acento ámbar ===== */
+:root{--azul:#f5b301;--azul2:#f5b301;--gris:#3a3e45;--borde:#43474f;--txt:#e8e9eb}
+body{background:#17181b}
+#top{background:#17181b;color:#e8e9eb;border-bottom:1px solid #2c2f34}
+#top button,#top a.lnk{background:#2c2f34;color:#e8e9eb;border:1px solid #43474f}
+#top a.lnk{display:inline-flex;align-items:center;border-radius:6px;padding:0 14px;font-size:14px;min-height:36px;text-decoration:none}
+#top button.primary{background:#f5b301;color:#1a1a1a;border-color:#f5b301}
+#fname{background:#2c2f34;border:1px solid #43474f;color:#e8e9eb}
+#tabs{background:#1f2125;border-bottom:1px solid #2c2f34}
+.tab{color:#a9adb4}.tab.on,.tab.file{color:#f5b301}.tab.on::after{background:#f5b301}.tab.tabtable{color:#7fd1c7}
+#tools{background:#2a2d32;border-bottom:1px solid #3a3e45}
+.g{border-right:1px solid #3a3e45}.gl{color:#9a9fa7}
+.b{color:#e8e9eb}.b:active{background:#3a3e45}.b.on{background:#4a4220;border-color:#f5b301}
+select.s{background:#3a3e45;color:#e8e9eb;border:1px solid #4a4e56}
+label.cp{color:#e8e9eb}
+.gal{background:#1f2125;border:1px solid #43474f}
+.gal button{background:#2a2d32;color:#e8e9eb}.gal button:active{background:#3a3e45}
+#unsaved{background:#3a3220;border-bottom:1px solid #5a4a1c;color:#f3dfa0}
+#unsaved u{color:#f3dfa0}#unsaved .ico{background:#f5b301;color:#1a1a1a}
+#unsaved button{background:#2c2f34;color:#e8e9eb;border:1px solid #5a5e66}
+#back{background:#17181b}
+#scroll{background:#1a1b1e}
+#panel{background:#2a2d32;border-bottom:1px solid #3a3e45;color:#e8e9eb}
+#panel input[type=text],#panel input[type=number],#panel select{background:#17181b;color:#e8e9eb;border:1px solid #4a4e56;border-radius:7px;min-height:42px;padding:0 8px;font-size:15px}
+#panel button{background:#f5b301;border-color:#f5b301;color:#1a1a1a}
+#panel button.sec{background:#2a2d32;color:#f5b301;border-color:#f5b301}
+#status{background:#1f2125;border-top:1px solid #2c2f34;color:#a9adb4}
+#status button{background:#2c2f34;color:#e8e9eb;border-color:#43474f}
+#symgrid button{background:#2c2f34;color:#e8e9eb;border-color:#43474f}
+#toast{background:#f5b301;color:#1a1a1a}
+#doc{color:#000}
+#doc td.sel,#doc th.sel{outline-color:#f5b301}
+#tabs .tab.sm{padding:0 12px;font-size:17px}
+#tabs .tab.gold{color:#f5b301;font-weight:700;font-size:14px}
+#tabAct{display:none}
+body.compact #tabAct{display:flex}
+body.compact #top,body.compact #status{display:none}
+body.rc #tools{display:none}
+body.rc.peek #tools{display:block;position:absolute;left:0;right:0;top:var(--rt,90px);z-index:15;box-shadow:0 10px 20px rgba(0,0,0,.55)}
+body.rc #btnRibbon{transform:rotate(180deg)}
+
 @media print{
  #status{display:none!important}
  body{background:#fff;overflow:visible;display:block}
@@ -126,6 +167,9 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
   <button class="tab" data-tab="revisar">Revisar</button>
   <button class="tab" data-tab="vista">Vista</button>
   <button class="tab tabtable" id="tabTable" data-tab="tabla" hidden>Tabla</button>
+  <span style="flex:1"></span>
+  <span id="tabAct"><button class="tab sm" data-act="undoA" title="Deshacer">↶</button><button class="tab sm" data-act="redoA" title="Rehacer">↷</button><button class="tab sm gold" data-act="save">Guardar</button></span>
+  <button class="tab sm" id="btnRibbon" data-act="ribbonToggle" title="Contraer o expandir la cinta (doble toque en una pestaña)">⌃</button>
 </div>
 
 <div id="tools">
@@ -153,7 +197,7 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
       <button class="b" data-cmd="superscript" title="Superíndice">x²</button>
       <label class="cp" title="Color de resaltado del texto">🖍<i id="barBack" style="background:#ffff00"></i><input type="color" id="colBack" value="#ffff00"></label>
       <button class="b" data-act="noHi" title="Quitar resaltado">⊘</button>
-      <label class="cp" title="Color de fuente"><b style="color:#222">A</b><i id="barFore" style="background:#ff0000"></i><input type="color" id="colFore" value="#ff0000"></label>
+      <label class="cp" title="Color de fuente"><b>A</b><i id="barFore" style="background:#ff0000"></i><input type="color" id="colFore" value="#ff0000"></label>
     </div>
   </div></div><div class="gl">Fuente</div></div>
 
@@ -241,6 +285,7 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
  <div class="rb" id="rb-vista">
   <div class="g"><div class="gb"><button class="b bb" data-act="zoomOut"><span class="ic">−</span>Alejar</button><button class="b bb" data-act="zoom100"><span class="ic">100</span>100 %</button><button class="b bb" data-act="zoomIn"><span class="ic">+</span>Acercar</button><button class="b bb" data-act="zoomFit"><span class="ic">↔</span>Ancho de página</button></div><div class="gl">Zoom</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="marks"><span class="ic">¶</span>Marcas de formato</button></div><div class="gl">Mostrar</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="ribbonToggle"><span class="ic">⌃</span>Contraer cinta</button><button class="b bb" data-act="compactToggle"><span class="ic">▭</span>Modo compacto</button><button class="b bb" data-act="fullscreen"><span class="ic">⤢</span>Pantalla completa</button></div><div class="gl">Ventana</div></div>
  </div>
 
  <div class="rb" id="rb-tabla">
@@ -257,6 +302,7 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
 <div id="unsaved" hidden><span class="ico">i</span><b>ARCHIVO NO GUARDADO</b><u>Los cambios se guardan temporalmente en este equipo.</u><button data-act="save">Guardar</button></div>
 <div id="back" hidden><div class="bk">
   <button data-act="bkClose">←  Volver al documento</button>
+  <input id="fname2" type="text" placeholder="Nombre del documento" style="margin:6px 14px;padding:10px;border-radius:7px;border:1px solid #43474f;background:#2c2f34;color:#e8e9eb;font-size:16px">
   <button data-act="new">Nuevo</button><button data-act="open">Abrir…</button><button data-act="save">Guardar</button><button data-act="save">Guardar como…</button><button data-act="pdf">Exportar a PDF / Imprimir</button>
   <div id="bkRecent"></div><div id="bkInfo"></div></div></div>
 
@@ -321,11 +367,12 @@ $('#tools').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.cmd){restoreSel();document.execCommand(b.dataset.cmd,false,null);markDirty();syncTools();}
   else if(b.dataset.act){acts[b.dataset.act]&&acts[b.dataset.act]();}
+  if(document.body.classList.contains('peek')&&!/^panel/.test(b.dataset.act||''))document.body.classList.remove('peek');
 });
 $('#top').addEventListener('mousedown',e=>{if(e.target.tagName==='BUTTON')e.preventDefault();});
 $('#top').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.cmd){restoreSel();document.execCommand(b.dataset.cmd,false,null);markDirty();}else if(b.dataset.act)acts[b.dataset.act]();});
 $('#tabs').addEventListener('mousedown',e=>e.preventDefault());
-$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab)setTab(b.dataset.tab);else if(b.dataset.act)acts[b.dataset.act]();});
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab){const bd=document.body;if(bd.classList.contains('rc')&&bd.classList.contains('peek')&&b.classList.contains('on')){bd.classList.remove('peek');return;}setTab(b.dataset.tab);if(bd.classList.contains('rc')){bd.style.setProperty('--rt',$('#tabs').getBoundingClientRect().bottom+'px');bd.classList.add('peek');}}else if(b.dataset.act)acts[b.dataset.act]();});
 $('#unsaved').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.act)acts[b.dataset.act]();});
 $('#back').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.key){$('#back').hidden=true;loadRecent(b.dataset.key);return;}if(!b||!b.dataset.act)return;$('#back').hidden=true;if(b.dataset.act!=='bkClose')acts[b.dataset.act]();});
 function setTab(n){document.querySelectorAll('#tabs [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===n));document.querySelectorAll('#tools .rb').forEach(r=>r.classList.toggle('on',r.id==='rb-'+n));}
@@ -372,6 +419,11 @@ const acts={
     $('#hfLogoX').onclick=()=>{state.hdrLogo='';renderHF();};
     $('#hfOk').onclick=()=>{state.hdrText=$('#hfH').value;state.ftrText=$('#hfF').value;state.ftrNum=$('#hfN').checked;renderHF();markDirty();hidePanel();};
     $('#hfX').onclick=hidePanel;},
+  ribbonToggle(){LS.set('w_rc',LS.get('w_rc')==='1'?'0':'1');applyView();},
+  compactToggle(){LS.set('w_cp',LS.get('w_cp')==='1'?'0':'1');applyView();toast(LS.get('w_cp')==='1'?'Modo compacto: sin barra de título ni de estado':'Modo compacto desactivado');},
+  fullscreen(){const d=document;if(d.fullscreenElement){d.exitFullscreen();}else if(d.documentElement.requestFullscreen){d.documentElement.requestFullscreen().catch(()=>toast('Pantalla completa no disponible'));}else toast('Pantalla completa no disponible');},
+  undoA(){restoreSel();document.execCommand('undo');markDirty();},
+  redoA(){restoreSel();document.execCommand('redo');markDirty();},
   noHi(){restoreSel();document.execCommand('hiliteColor',false,'transparent');markDirty();},
   cam(){restoreSel();$('#fileCam').click();},
   hr(){restoreSel();document.execCommand('insertHTML',false,'<hr><p><br></p>');markDirty();},
@@ -392,7 +444,7 @@ const acts={
     const txt='Mín: '+f(Math.min(...v))+' · Prom: '+f(sum/v.length)+' · Máx: '+f(Math.max(...v))+' · n = '+v.length;
     showPanel('<b>'+esc(txt)+'</b><button id="stIns">Insertar bajo la tabla</button><button class="sec" id="stX">Cerrar</button>');
     $('#stIns').onclick=()=>{const p=document.createElement('p');p.innerHTML='<b>Estadística de la columna:</b> '+esc(txt);t.after(p);markDirty();hidePanel();};$('#stX').onclick=hidePanel;},
-  backstage(){$('#back').hidden=false;const t=doc.innerText||'';
+  backstage(){$('#back').hidden=false;$('#fname2').value=$('#fname').value;const t=doc.innerText||'';
     $('#bkInfo').textContent=($('#fname').value||'Documento')+'.docx · '+(t.match(/\S+/g)||[]).length+' palabras';
     listRecent().then(l=>{$('#bkRecent').innerHTML=l.length?'<div style="margin:10px 14px 2px;opacity:.8;font-size:13px">Recientes</div>'+l.map(x=>'<button data-key="'+esc(x.key)+'">'+esc(x.v.name||'Sin título')+'</button>').join(''):'';});},
   bkClose(){$('#back').hidden=true;},
@@ -493,6 +545,13 @@ doc.addEventListener('pointerup',()=>{if(!painter)return;setTimeout(()=>{const s
   const m=p.color.match(/\d+/g);if(m)document.execCommand('foreColor',false,'#'+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,'0')).join(''));
   document.execCommand('fontName',false,p.font);applySize(p.pt);},60);});
 let rec=null;
+const LS={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
+function applyView(){const b=document.body;b.classList.toggle('rc',LS.get('w_rc')==='1');b.classList.toggle('compact',LS.get('w_cp')==='1');b.classList.remove('peek');
+  $('#btnRibbon').title=b.classList.contains('rc')?'Expandir la cinta de opciones':'Contraer la cinta de opciones';}
+$('#scroll').addEventListener('pointerdown',()=>document.body.classList.remove('peek'));
+$('#tabs').addEventListener('dblclick',e=>{if(e.target.closest('[data-tab]'))acts.ribbonToggle();});
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='F1'){e.preventDefault();acts.ribbonToggle();}});
+$('#fname2').addEventListener('input',e=>{$('#fname').value=e.target.value;markDirty();});
 function num(t){t=String(t||'').trim().replace(/\s/g,'');if(!/^[-+]?[\d.,]+$/.test(t))return NaN;if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');return parseFloat(t);}
 function setVA(v){const c=cellNow();if(!c)return;c.style.verticalAlign=v;markDirty();}
 function tblSort(dir){const c=cellNow();if(!c)return;const t=c.closest('table'),idx=c.cellIndex;const rows=[...t.rows];if(rows.length<2)return;
@@ -887,6 +946,7 @@ async function restore(){
 $('#fname').addEventListener('input',markDirty);
 setInterval(()=>{if(dirty)persist();},8000);
 window.addEventListener('pagehide',persist);
+applyView();
 restore().then(()=>{applyPage();updateStatus();});
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
