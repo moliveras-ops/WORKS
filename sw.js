@@ -1,5 +1,5 @@
-const CACHE='works-editor-v5';
-const FILES=['./','index.html','manifest.webmanifest','lib/mammoth.browser.min.js','lib/docx.umd.js','lib/jszip.min.js','icon-192.png','icon-512.png'];
+const CACHE='works-editor-v6';
+const FILES=['./','index.html','hoja.html','manifest.webmanifest','lib/mammoth.browser.min.js','lib/docx.umd.js','lib/jszip.min.js','lib/exceljs.min.js','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 // Páginas: primero la red (siempre la versión más nueva); sin internet, la copia guardada.
