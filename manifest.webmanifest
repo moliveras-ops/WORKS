@@ -1,7 +1,7 @@
 {
-  "name": "Works Editor",
-  "short_name": "Works",
-  "description": "Editor de documentos Word (.docx) que funciona sin internet",
+  "name": "Work Suite",
+  "short_name": "Work Suite",
+  "description": "Work Suite: editor Word, hoja de cálculo y más, sin internet",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
