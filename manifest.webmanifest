@@ -1,0 +1,15 @@
+{
+  "name": "Works Editor",
+  "short_name": "Works",
+  "description": "Editor de documentos Word (.docx) que funciona sin internet",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#cfd6de",
+  "theme_color": "#1f4e79",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
