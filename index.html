@@ -152,6 +152,7 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
       <button class="b" data-cmd="subscript" title="Subíndice">x₂</button>
       <button class="b" data-cmd="superscript" title="Superíndice">x²</button>
       <label class="cp" title="Color de resaltado del texto">🖍<i id="barBack" style="background:#ffff00"></i><input type="color" id="colBack" value="#ffff00"></label>
+      <button class="b" data-act="noHi" title="Quitar resaltado">⊘</button>
       <label class="cp" title="Color de fuente"><b style="color:#222">A</b><i id="barFore" style="background:#ff0000"></i><input type="color" id="colFore" value="#ff0000"></label>
     </div>
   </div></div><div class="gl">Fuente</div></div>
@@ -187,13 +188,15 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
 
   <div class="g"><div class="gb">
     <button class="b bb" data-act="panelFind"><span class="ic">🔍</span>Buscar</button>
+    <button class="b bb" data-act="dictate" id="btnDict"><span class="ic">🎤</span>Dictar</button>
   </div><div class="gl">Edición</div></div>
  </div>
 
  <div class="rb" id="rb-insertar">
   <div class="g"><div class="gb"><button class="b bb" data-act="pagebreak"><span class="ic">⤓</span>Salto de página</button></div><div class="gl">Páginas</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="panelTable"><span class="ic">▦</span>Tabla</button></div><div class="gl">Tablas</div></div>
-  <div class="g"><div class="gb"><button class="b bb" data-act="img"><span class="ic">🖼</span>Imagen</button></div><div class="gl">Ilustraciones</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="img"><span class="ic">🖼</span>Imagen</button><button class="b bb" data-act="cam"><span class="ic">📷</span>Cámara</button></div><div class="gl">Ilustraciones</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="hr"><span class="ic">―</span>Línea horizontal</button><button class="b bb" data-act="noteBox"><span class="ic">▭</span>Recuadro de nota</button></div><div class="gl">Elementos</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="link"><span class="ic">🔗</span>Enlace</button></div><div class="gl">Vínculos</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="panelHF"><span class="ic">▤</span>Encabezado y pie</button></div><div class="gl">Encabezado y pie</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="date"><span class="ic">📅</span>Fecha</button><button class="b bb" data-act="panelSym"><span class="ic">Ω</span>Símbolo</button></div><div class="gl">Texto y símbolos</div></div>
@@ -205,6 +208,13 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
     <select class="s" id="selDefFont" style="width:170px"><option>Times New Roman</option><option>Arial</option><option>Calibri</option><option>Cambria</option><option>Courier New</option><option>Georgia</option><option>Verdana</option></select></div>
   </div><div class="gl">Formato del documento</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="panelHF"><span class="ic">▤</span>Encabezado y pie</button></div><div class="gl">Encabezado y pie</div></div>
+  <div class="g"><div class="gb">
+    <div class="col"><span style="font-size:12px;color:#555">Espacio antes / después (pt)</span><div class="row">
+      <select class="s" id="selSpB" title="Espacio antes del párrafo"><option value="">Antes</option><option>0</option><option>6</option><option>12</option><option>18</option></select>
+      <select class="s" id="selSpA" title="Espacio después del párrafo"><option value="">Después</option><option>0</option><option>6</option><option>8</option><option>10</option><option>12</option></select></div></div>
+    <div class="col"><span style="font-size:12px;color:#555">Sangría 1.ª línea</span>
+      <select class="s" id="selFirst"><option value="">—</option><option value="0">Ninguna</option><option value="0.5">0,5 cm</option><option value="1">1 cm</option><option value="1.25">1,25 cm</option><option value="1.5">1,5 cm</option></select></div>
+  </div><div class="gl">Párrafo</div></div>
  </div>
 
  <div class="rb" id="rb-disposicion">
@@ -225,6 +235,7 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
   <div class="g"><div class="gb"><button class="b bb on" data-act="spell" id="btnSpell"><span class="ic">✔</span>Ortografía</button></div><div class="gl">Revisión</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="count"><span class="ic">123</span>Contar palabras</button></div><div class="gl">Estadísticas</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="panelFind"><span class="ic">🔍</span>Buscar y reemplazar</button></div><div class="gl">Edición</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="dictate"><span class="ic">🎤</span>Dictado por voz</button></div><div class="gl">Voz</div></div>
  </div>
 
  <div class="rb" id="rb-vista">
@@ -236,6 +247,10 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
   <div class="g"><div class="gb"><button class="b bb" data-act="rowAdd"><span class="ic">＋</span>Fila</button><button class="b bb" data-act="colAdd"><span class="ic">＋</span>Columna</button><button class="b bb" data-act="rowDel"><span class="ic">−</span>Fila</button><button class="b bb" data-act="colDel"><span class="ic">−</span>Columna</button></div><div class="gl">Filas y columnas</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="cellMerge"><span class="ic">⇥</span>Unir →</button><button class="b bb" data-act="cellSplit"><span class="ic">⇤⇥</span>Dividir</button></div><div class="gl">Combinar</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="cellShade"><span class="ic">◪</span>Sombrear</button><button class="b bb" data-act="tblBorders"><span class="ic">▦</span>Bordes</button><button class="b bb" data-act="tblDel"><span class="ic">✕</span>Eliminar tabla</button></div><div class="gl">Estilo</div></div>
+ <div class="g"><div class="gb"><div class="col"><span style="font-size:12px;color:#555">Estilo de tabla</span>
+    <select class="s" id="selTbl"><option value="">Elegir…</option><option value="grid">Rejilla</option><option value="blue">Encabezado azul</option><option value="zebra">Filas alternas</option><option value="nob">Sin bordes</option></select></div></div><div class="gl">Estilos de tabla</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="tvTop"><span class="ic">⤒</span>Arriba</button><button class="b bb" data-act="tvMid"><span class="ic">↕</span>Centro</button><button class="b bb" data-act="tvBot"><span class="ic">⤓</span>Abajo</button></div><div class="gl">Alineación vertical</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="colStats"><span class="ic">Σ</span>Estadística de columna</button><button class="b bb" data-act="tblSortA"><span class="ic">A↓</span>Ordenar A→Z</button><button class="b bb" data-act="tblSortD"><span class="ic">Z↓</span>Ordenar Z→A</button></div><div class="gl">Datos</div></div>
  </div>
 </div>
 
@@ -243,7 +258,7 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
 <div id="back" hidden><div class="bk">
   <button data-act="bkClose">←  Volver al documento</button>
   <button data-act="new">Nuevo</button><button data-act="open">Abrir…</button><button data-act="save">Guardar</button><button data-act="save">Guardar como…</button><button data-act="pdf">Exportar a PDF / Imprimir</button>
-  <div id="bkInfo"></div></div></div>
+  <div id="bkRecent"></div><div id="bkInfo"></div></div></div>
 
 <div id="panel"></div>
 
@@ -258,6 +273,7 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
 <div id="status"><span id="stInfo"></span><span class="sp"></span><button id="zOut" title="Alejar">−</button><span id="zVal">100%</span><button id="zIn" title="Acercar">+</button></div>
 <input type="file" id="fileDocx" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
 <input type="file" id="fileImg" accept="image/*" hidden>
+<input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
 <input type="file" id="fileLogo" accept="image/*" hidden>
 <div id="toast"></div>
 
@@ -269,6 +285,8 @@ label.cp i{display:block;width:18px;height:4px;margin-top:1px}
 'use strict';
 const $=s=>document.querySelector(s);
 const doc=$('#doc'), panel=$('#panel');
+const FONTS=['Times New Roman','Arial','Calibri','Cambria','Georgia','Verdana','Tahoma','Trebuchet MS','Garamond','Book Antiqua','Century Gothic','Courier New','Segoe UI','Comic Sans MS'];
+['#selFont','#selDefFont'].forEach(id=>{$(id).innerHTML=FONTS.map(f=>'<option>'+f+'</option>').join('');});
 const D=window.docx;
 function defState(){return {hdrText:'',hdrLogo:'',ftrText:'',ftrNum:true,defFont:'Times New Roman',defSize:11,page:{size:'letter',land:false,mar:1134}};}
 let state=defState();
@@ -309,7 +327,7 @@ $('#top').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
 $('#tabs').addEventListener('mousedown',e=>e.preventDefault());
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab)setTab(b.dataset.tab);else if(b.dataset.act)acts[b.dataset.act]();});
 $('#unsaved').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.act)acts[b.dataset.act]();});
-$('#back').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.act)return;$('#back').hidden=true;if(b.dataset.act!=='bkClose')acts[b.dataset.act]();});
+$('#back').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.key){$('#back').hidden=true;loadRecent(b.dataset.key);return;}if(!b||!b.dataset.act)return;$('#back').hidden=true;if(b.dataset.act!=='bkClose')acts[b.dataset.act]();});
 function setTab(n){document.querySelectorAll('#tabs [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===n));document.querySelectorAll('#tools .rb').forEach(r=>r.classList.toggle('on',r.id==='rb-'+n));}
 setInterval(()=>{$('#unsaved').hidden=!dirty;},300);
 $('#selFont').addEventListener('change',e=>{restoreSel();document.execCommand('fontName',false,e.target.value);markDirty();});
@@ -354,6 +372,30 @@ const acts={
     $('#hfLogoX').onclick=()=>{state.hdrLogo='';renderHF();};
     $('#hfOk').onclick=()=>{state.hdrText=$('#hfH').value;state.ftrText=$('#hfF').value;state.ftrNum=$('#hfN').checked;renderHF();markDirty();hidePanel();};
     $('#hfX').onclick=hidePanel;},
+  noHi(){restoreSel();document.execCommand('hiliteColor',false,'transparent');markDirty();},
+  cam(){restoreSel();$('#fileCam').click();},
+  hr(){restoreSel();document.execCommand('insertHTML',false,'<hr><p><br></p>');markDirty();},
+  noteBox(){restoreSel();document.execCommand('insertHTML',false,'<table><tbody><tr><td style="background-color:#fff4c4"><b>Nota:</b>&nbsp;</td></tr></tbody></table><p><br></p>');markDirty();},
+  dictate(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('Este navegador no admite dictado por voz');return;}
+    if(rec){rec.stop();return;}
+    rec=new SR();rec.lang='es-CL';rec.continuous=true;rec.interimResults=false;
+    rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal){restoreSel();document.execCommand('insertText',false,e.results[i][0].transcript.trim()+' ');}}markDirty();};
+    rec.onend=()=>{rec=null;$('#btnDict').classList.remove('on');};
+    rec.onerror=ev=>{toast(ev.error==='not-allowed'?'Permite el micrófono para dictar':'El dictado necesita conexión a internet');};
+    try{rec.start();$('#btnDict').classList.add('on');toast('Dictando… toca Dictar de nuevo para detener');}catch(e){rec=null;}},
+  tvTop(){setVA('top');},tvMid(){setVA('middle');},tvBot(){setVA('bottom');},
+  tblSortA(){tblSort(1);},tblSortD(){tblSort(-1);},
+  colStats(){const c=cellNow();if(!c){toast('Coloca el cursor en una columna de la tabla');return;}
+    const t=c.closest('table'),idx=c.cellIndex;const v=[];[...t.rows].forEach(tr=>{const td=tr.cells[idx];if(td){const n=num(td.textContent);if(!isNaN(n))v.push(n);}});
+    if(!v.length){toast('La columna no tiene números');return;}
+    const sum=v.reduce((a,b)=>a+b,0),f=n=>n.toLocaleString('es-CL',{maximumFractionDigits:3});
+    const txt='Mín: '+f(Math.min(...v))+' · Prom: '+f(sum/v.length)+' · Máx: '+f(Math.max(...v))+' · n = '+v.length;
+    showPanel('<b>'+esc(txt)+'</b><button id="stIns">Insertar bajo la tabla</button><button class="sec" id="stX">Cerrar</button>');
+    $('#stIns').onclick=()=>{const p=document.createElement('p');p.innerHTML='<b>Estadística de la columna:</b> '+esc(txt);t.after(p);markDirty();hidePanel();};$('#stX').onclick=hidePanel;},
+  backstage(){$('#back').hidden=false;const t=doc.innerText||'';
+    $('#bkInfo').textContent=($('#fname').value||'Documento')+'.docx · '+(t.match(/\S+/g)||[]).length+' palabras';
+    listRecent().then(l=>{$('#bkRecent').innerHTML=l.length?'<div style="margin:10px 14px 2px;opacity:.8;font-size:13px">Recientes</div>'+l.map(x=>'<button data-key="'+esc(x.key)+'">'+esc(x.v.name||'Sin título')+'</button>').join(''):'';});},
+  bkClose(){$('#back').hidden=true;},
   paste(){if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(t=>{restoreSel();document.execCommand('insertText',false,t);markDirty();}).catch(()=>toast('Mantén presionado en el texto y elige Pegar'));}else toast('Mantén presionado en el texto y elige Pegar');},
   fmtPaint(){const s=getSelection();if(!s.rangeCount||!inDoc(s.anchorNode)&&!savedRange){toast('Coloca el cursor en el texto con el formato');return;}
     const el=s.anchorNode&&inDoc(s.anchorNode)?(s.anchorNode.nodeType===3?s.anchorNode.parentNode:s.anchorNode):doc;const cs=getComputedStyle(el);
@@ -382,8 +424,8 @@ const acts={
   panelSym(){const L=['°','°C','±','×','÷','²','³','µ','Ø','ø','≥','≤','≠','≈','Δ','Ω','‰','→','↑','↓','§','€','“','”','–','—'];
     showPanel('<div id="symgrid">'+L.map(c=>'<button class="sec" data-s="'+c+'">'+c+'</button>').join('')+'</div><button class="sec" id="syX">Cerrar</button>');
     $('#symgrid').onclick=e=>{const b=e.target.closest('button');if(!b)return;restoreSel();document.execCommand('insertText',false,b.dataset.s);markDirty();};$('#syX').onclick=hidePanel;},
-  panelTpl(){showPanel('<button id="tplRer">Informe técnico (RER)</button><button id="tplMin" class="sec">Minuta / acta</button><button id="tplX" class="sec">Cerrar</button><span style="font-size:13px;color:#556">Se inserta donde está el cursor.</span>');
-    $('#tplRer').onclick=()=>{insertTpl(TPL_RER());hidePanel();};$('#tplMin').onclick=()=>{insertTpl(TPL_MIN());hidePanel();};$('#tplX').onclick=hidePanel;},
+  panelTpl(){showPanel('<button id="tplRer">Informe técnico (RER)</button><button id="tplMin" class="sec">Minuta / acta</button><button id="tplFoto" class="sec">Hoja de fotos 2×2</button><button id="tplX" class="sec">Cerrar</button><span style="font-size:13px;color:#556">Se inserta donde está el cursor.</span>');
+    $('#tplRer').onclick=()=>{insertTpl(TPL_RER());hidePanel();};$('#tplMin').onclick=()=>{insertTpl(TPL_MIN());hidePanel();};$('#tplFoto').onclick=()=>{insertTpl(TPL_FOTO());hidePanel();};$('#tplX').onclick=hidePanel;},
   panelPage(){const p=state.page;
     showPanel('<label>Tamaño <select id="pgS"><option value="letter">Carta</option><option value="a4">A4</option><option value="oficio">Oficio</option></select></label><label>Orientación <select id="pgO"><option value="p">Vertical</option><option value="l">Horizontal</option></select></label><label>Márgenes <select id="pgM"><option value="720">Estrechos 1,27 cm</option><option value="1134">Normales 2 cm</option><option value="1440">Moderados 2,54 cm</option><option value="1701">Anchos 3 cm</option></select></label><button id="pgOk">Aplicar</button><button class="sec" id="pgX">Cerrar</button>');
     $('#pgS').value=p.size;$('#pgO').value=p.land?'l':'p';
@@ -450,6 +492,30 @@ doc.addEventListener('pointerup',()=>{if(!painter)return;setTimeout(()=>{const s
   const st=c=>document.queryCommandState(c);if(st('bold')!==p.bold)document.execCommand('bold');if(st('italic')!==p.italic)document.execCommand('italic');if(st('underline')!==p.under)document.execCommand('underline');
   const m=p.color.match(/\d+/g);if(m)document.execCommand('foreColor',false,'#'+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,'0')).join(''));
   document.execCommand('fontName',false,p.font);applySize(p.pt);},60);});
+let rec=null;
+function num(t){t=String(t||'').trim().replace(/\s/g,'');if(!/^[-+]?[\d.,]+$/.test(t))return NaN;if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');return parseFloat(t);}
+function setVA(v){const c=cellNow();if(!c)return;c.style.verticalAlign=v;markDirty();}
+function tblSort(dir){const c=cellNow();if(!c)return;const t=c.closest('table'),idx=c.cellIndex;const rows=[...t.rows];if(rows.length<2)return;
+  const r0=rows[0];if([...r0.cells].every(x=>x.tagName==='TH')||isNaN(num(r0.cells[idx]&&r0.cells[idx].textContent)))rows.shift();
+  rows.sort((a,b)=>{const x=a.cells[idx]?a.cells[idx].textContent.trim():'',y=b.cells[idx]?b.cells[idx].textContent.trim():'';const nx=num(x),ny=num(y);
+    return dir*((!isNaN(nx)&&!isNaN(ny))?nx-ny:x.localeCompare(y,'es',{numeric:true}));});
+  rows.forEach(r=>r.parentNode.appendChild(r));markDirty();}
+function tblStyle(k){const c=cellNow();if(!c)return;const t=c.closest('table');t.classList.remove('nob');
+  [...t.rows].forEach((tr,i)=>[...tr.cells].forEach(td=>{td.style.backgroundColor='';td.style.color='';td.style.fontWeight='';
+    if(k==='blue'&&i===0){td.style.backgroundColor='#185abd';td.style.color='#ffffff';td.style.fontWeight='bold';}
+    if(k==='zebra'){if(i===0){td.style.backgroundColor='#d9e8f7';td.style.fontWeight='bold';}else if(i%2===0)td.style.backgroundColor='#f2f2f2';}}));
+  if(k==='nob')t.classList.add('nob');markDirty();}
+$('#selTbl').addEventListener('change',e=>{if(e.target.value)tblStyle(e.target.value);e.target.value='';});
+function eachBlock(fn){restoreSel();const r=savedRange;if(r)doc.querySelectorAll('p,h1,h2,h3,li,blockquote').forEach(b=>{if(r.intersectsNode(b))fn(b);});markDirty();}
+$('#selSpB').addEventListener('change',e=>{const v=e.target.value;if(v==='')return;eachBlock(b=>{b.style.marginTop=v+'pt';});e.target.value='';});
+$('#selSpA').addEventListener('change',e=>{const v=e.target.value;if(v==='')return;eachBlock(b=>{b.style.marginBottom=v+'pt';});e.target.value='';});
+$('#selFirst').addEventListener('change',e=>{const v=e.target.value;if(v==='')return;eachBlock(b=>{b.style.textIndent=v+'cm';});e.target.value='';});
+$('#fileCam').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const d=await readImage(f,1600);restoreSel();document.execCommand('insertHTML',false,'<img src="'+d+'" style="width:420px">');markDirty();}catch(err){toast('No se pudo insertar la foto');}});
+async function listRecent(){try{const db=await idb();return await new Promise(res=>{const out=[];const r=db.transaction('kv').objectStore('kv').openCursor();r.onsuccess=()=>{const c=r.result;if(c){if(String(c.key).startsWith('doc:'))out.push({key:c.key,v:c.value});c.continue();}else res(out.sort((a,b)=>(b.v.ts||0)-(a.v.ts||0)).slice(0,12));};r.onerror=()=>res([]);});}catch(e){return [];}}
+async function loadRecent(key){try{const db=await idb();const v=await new Promise((res,rej)=>{const r=db.transaction('kv').objectStore('kv').get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
+  if(v){doc.innerHTML=v.html;$('#fname').value=v.name||'Documento sin título';state=Object.assign(defState(),v.state||{});renderHF();applyPage();updateStatus();dirty=false;persist();toast('Abierto: '+(v.name||'documento'));}}catch(e){toast('No se pudo abrir el documento reciente');}}
+function TPL_FOTO(){const n=doc.querySelectorAll('p.cap').length;const cell=i=>'<td style="text-align:center"><p style="text-align:center"><br></p><p class="cap" style="text-align:center"><i>Foto '+(n+i)+': </i></p></td>';
+  return '<table><tbody><tr>'+cell(1)+cell(2)+'</tr><tr>'+cell(3)+cell(4)+'</tr></tbody></table><p><br></p>';}
 function cellNow(){return lastCell&&doc.contains(lastCell)?lastCell:null;}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function showPanel(h){panel.innerHTML=h;panel.classList.add('show');}
@@ -493,9 +559,11 @@ $('#fileLogo').addEventListener('change',async e=>{
 doc.addEventListener('click',e=>{ // tocar imagen: elegir tamaño
   if(e.target.tagName==='IMG'){
     const im=e.target;const w=Math.round(im.getBoundingClientRect().width);
-    showPanel('<label>Ancho de la imagen (px) <input type="number" id="imW" value="'+w+'" min="40" max="800" step="10"></label><button id="imOk">Aplicar</button><button class="sec" id="imCen">Centrar</button><button class="sec" id="imCap">Agregar leyenda</button><button class="sec" id="imDel">Eliminar imagen</button><button class="sec" id="imX">Cerrar</button>');
+    showPanel('<label>Ancho de la imagen (px) <input type="number" id="imW" value="'+w+'" min="40" max="800" step="10"></label><button id="imOk">Aplicar</button><button class="sec" id="imCen">Centrar</button><button class="sec" id="imRot">Girar 90°</button><button class="sec" id="imCap">Agregar leyenda</button><button class="sec" id="imDel">Eliminar imagen</button><button class="sec" id="imX">Cerrar</button>');
     $('#imOk').onclick=()=>{im.style.width=$('#imW').value+'px';im.style.height='auto';markDirty();hidePanel();};
     const blockOf=()=>{let b=im.parentNode;if(b===doc){const p=document.createElement('p');im.before(p);p.appendChild(im);b=p;}return b;};
+    $('#imRot').onclick=()=>{const w=im.naturalWidth,h=im.naturalHeight,rh=im.getBoundingClientRect().height;const c=document.createElement('canvas');c.width=h;c.height=w;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,h,w);x.translate(h/2,w/2);x.rotate(Math.PI/2);x.drawImage(im,-w/2,-h/2);
+      im.onload=()=>{im.style.width=Math.round(rh)+'px';im.style.height='auto';markDirty();};im.src=c.toDataURL('image/jpeg',0.9);hidePanel();};
     $('#imCen').onclick=()=>{blockOf().style.textAlign='center';markDirty();hidePanel();};
     $('#imCap').onclick=()=>{const b=blockOf();const n=doc.querySelectorAll('p.cap').length+1;const p=document.createElement('p');p.className='cap';p.style.textAlign='center';p.innerHTML='<i>Figura '+n+': </i>';
       b.style.textAlign='center';if(/^(TD|TH|LI)$/.test(b.tagName))b.appendChild(p);else b.after(p);
@@ -654,12 +722,18 @@ function alignOf(el){
 }
 function pxPx(v){const m=String(v||'').match(/^([\d.]+)px$/);return m?+m[1]:0;}
 const HEADS={H1:D.HeadingLevel.HEADING_1,H2:D.HeadingLevel.HEADING_2,H3:D.HeadingLevel.HEADING_3,H4:D.HeadingLevel.HEADING_4,H5:D.HeadingLevel.HEADING_5,H6:D.HeadingLevel.HEADING_6};
+function cssPt(v){const m=String(v||'').match(/^(-?[\d.]+)(pt|px)$/);if(!m)return null;return m[2]==='pt'?+m[1]:+m[1]*0.75;}
+function cssTw(v){const m=String(v||'').match(/^(-?[\d.]+)(cm|px|pt)$/);if(!m)return 0;return Math.round(m[2]==='cm'?+m[1]*567:m[2]==='px'?+m[1]*15:+m[1]*20);}
 function makePara(el,children,ctx,extra){
   const o=Object.assign({children:children,spacing:{after:120}},extra||{});
   const al=alignOf(el);if(al)o.alignment=al;
   const ind=(ctx.indent||0)+pxPx(el.style&&el.style.marginLeft)*15;if(ind>0&&!o.numbering)o.indent={left:Math.round(ind)};
   if(HEADS[el.tagName])o.heading=HEADS[el.tagName];
   const pbg=parseColor(el.style&&el.style.backgroundColor);if(pbg&&/^(P|H\d|LI|DIV|BLOCKQUOTE)$/.test(el.tagName))o.shading={type:D.ShadingType.CLEAR,fill:pbg,color:'auto'};
+  const mt=cssPt(el.style&&el.style.marginTop),mb=cssPt(el.style&&el.style.marginBottom);
+  if(mt!=null)o.spacing=Object.assign({},o.spacing,{before:Math.round(mt*20)});
+  if(mb!=null)o.spacing=Object.assign({},o.spacing,{after:Math.round(mb*20)});
+  const ti=cssTw(el.style&&el.style.textIndent);if(ti)o.indent=Object.assign({},o.indent,{firstLine:ti});
   const lh=parseFloat(el.style&&el.style.lineHeight);
   if(lh>0)o.spacing=Object.assign({},o.spacing,{line:Math.round(lh*240),lineRule:D.LineRuleType.AUTO});
   return new D.Paragraph(o);
@@ -723,7 +797,7 @@ function tableFrom(t,ctx){
   if(!widths)widths=Array.from({length:ncols},()=>Math.round(TOTAL_W/ncols));
   const rows=trs.map(tr=>{
     const cells=[...tr.cells].map(td=>{
-      const base=td.tagName==='TH'?{bold:true}:{};
+      const base=styleFrom(td,td.tagName==='TH'?{bold:true}:{});
       const c2=Object.assign({},ctx,{base:Object.assign({},ctx.base||{},base)});
       let kids=blockChildren(td,c2);
       if(!kids.length||kids[kids.length-1] instanceof D.Table)kids.push(new D.Paragraph({children:[]}));
@@ -732,10 +806,11 @@ function tableFrom(t,ctx){
       if(cs>1)o.columnSpan=cs;if(rsn>1)o.rowSpan=rsn;
       const bg=parseColor(td.style.backgroundColor)||(td.tagName==='TH'?'E7ECF2':null);
       if(bg)o.shading={type:D.ShadingType.CLEAR,fill:bg,color:'auto'};
+      const va=td.style.verticalAlign;if(va==='middle')o.verticalAlign=D.VerticalAlign.CENTER;else if(va==='bottom')o.verticalAlign=D.VerticalAlign.BOTTOM;
       if(simple&&cs===1){const i=[...tr.cells].indexOf(td);if(widths[i])o.width={size:widths[i],type:D.WidthType.DXA};}
       return new D.TableCell(o);
     });
-    return new D.TableRow({children:cells,cantSplit:true});
+    return new D.TableRow({children:cells,cantSplit:true,tableHeader:tr.cells.length>0&&[...tr.cells].every(x=>x.tagName==='TH')});
   });
   return new D.Table(Object.assign({rows:rows.length?rows:[new D.TableRow({children:[new D.TableCell({children:[new D.Paragraph({children:[]})]})]})],columnWidths:widths,width:{size:TOTAL_W,type:D.WidthType.DXA}},t.classList.contains('nob')?{borders:D.TableBorders.NONE}:{}));
 }
@@ -803,7 +878,7 @@ window.WorksEditor={buildBlob,doc,state:()=>state};
 
 /* ---------- autoguardado local (IndexedDB) ---------- */
 function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('works-editor',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
-async function persist(){try{const db=await idb();const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put({html:doc.innerHTML,name:$('#fname').value,state:state},'cur');}catch(e){}}
+async function persist(){try{const db=await idb();const tx=db.transaction('kv','readwrite');const rec0={html:doc.innerHTML,name:$('#fname').value,state:state,ts:Date.now()};tx.objectStore('kv').put(rec0,'cur');tx.objectStore('kv').put(rec0,'doc:'+rec0.name);}catch(e){}}
 async function restore(){
   try{const db=await idb();const v=await new Promise((res,rej)=>{const r=db.transaction('kv').objectStore('kv').get('cur');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
     if(v&&v.html){doc.innerHTML=v.html;$('#fname').value=v.name||'Documento sin título';state=Object.assign(defState(),v.state||{});}}catch(e){}
