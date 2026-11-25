@@ -9,6 +9,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
+@font-face{font-family:"Segoe UI Light";font-weight:normal;font-style:normal;src:local("Segoe UI Light"),local("SegoeUI-Light"),local("Roboto Light"),local("Roboto-Light"),local("Roboto Thin"),local("sans-serif-light")}
 :root{--azul:#1f4e79;--azul2:#2e75b6;--gris:#e9edf2;--borde:#c9d1da;--txt:#1b2733}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -408,7 +409,7 @@ body.rc #btnRibbon{transform:rotate(180deg)}
 'use strict';
 const $=s=>document.querySelector(s);
 const doc=$('#doc'), panel=$('#panel');
-const FONTS=['Times New Roman','Arial','Calibri','Cambria','Georgia','Verdana','Tahoma','Trebuchet MS','Garamond','Book Antiqua','Century Gothic','Courier New','Segoe UI','Comic Sans MS'];
+const FONTS=['Times New Roman','Arial','Calibri','Cambria','Georgia','Verdana','Tahoma','Trebuchet MS','Garamond','Book Antiqua','Century Gothic','Courier New','Segoe UI','Segoe UI Light','Comic Sans MS'];
 ['#selFont','#selDefFont'].forEach(id=>{$(id).innerHTML=FONTS.map(f=>'<option>'+f+'</option>').join('');});
 const D=window.docx;
 function defState(){return {hdrText:'',hdrLogo:'',hdrRule:false,autoNum:false,ftrText:'',ftrNum:true,defFont:'Times New Roman',defSize:11,page:{size:'letter',land:false,mar:1134}};}
