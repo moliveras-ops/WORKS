@@ -380,7 +380,7 @@ body.rc #btnRibbon{transform:rotate(180deg)}
 <div id="back" hidden><div class="bk">
   <button data-act="bkClose">←  Volver al documento</button>
   <input id="fname2" type="text" placeholder="Nombre del documento" style="margin:6px 14px;padding:10px;border-radius:7px;border:1px solid #43474f;background:#2c2f34;color:#e8e9eb;font-size:16px">
-  <button data-act="new">Nuevo</button><button data-act="open">Abrir…</button><button data-act="save">Guardar</button><button data-act="save">Guardar como…</button><button data-act="pdf">Exportar a PDF / Imprimir</button>
+  <button data-act="new">Nuevo</button><button data-act="open">Abrir…</button><button data-act="save">Guardar</button><button data-act="save">Guardar como…</button><button data-act="pdfFile">Exportar a PDF</button><button data-act="pdf">Imprimir</button>
   <div id="bkRecent"></div><div id="bkInfo"></div></div></div>
 
 <div id="panel"></div>
@@ -404,6 +404,8 @@ body.rc #btnRibbon{transform:rotate(180deg)}
 <script src="lib/mammoth.browser.min.js"></script>
 <script src="lib/docx.umd.js"></script>
 <script src="lib/jszip.min.js"></script>
+<script src="lib/html2canvas.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
 <script>
 (function(){
 'use strict';
@@ -481,6 +483,7 @@ const acts={
   open(){$('#fileDocx').click();},
   save(){saveDocx();},
   pdf(){window.print();},
+  pdfFile(){if($('#back'))$('#back').hidden=true;exportPdf();},
   img(){restoreSel();$('#fileImg').click();},
   pagebreak(){restoreSel();document.execCommand('insertHTML',false,'<div class="pb" contenteditable="false"></div><p><br></p>');markDirty();},
   link(){showPanel('<input type="text" id="lkUrl" placeholder="https://..." style="min-width:260px"><button id="lkOk">Aplicar</button><button class="sec" id="lkX">Cerrar</button>');
@@ -1291,6 +1294,67 @@ async function saveDocx(){
   }catch(err){console.error(err);toast('Error al guardar: '+err.message,5000);}
 }
 window.WorksEditor={buildBlob,doc,state:()=>state};
+/* ---------- exportar a PDF (directo, tamaño carta, márgenes 2 cm) ---------- */
+async function exportPdf(){
+  if(!window.html2canvas||!window.jspdf){toast('No se cargó el generador de PDF');return;}
+  closeHF(true);toast('Generando PDF…',60000);
+  const W=664,PAGE=1056,M=76,S=2; // px a 96 ppp: carta 816×1056, margen ≈2 cm
+  const box=document.createElement('div');box.style.cssText='position:fixed;left:-20000px;top:0;width:'+W+'px;background:#fff;z-index:-1';
+  document.body.appendChild(box);
+  try{
+    let hdr=null,hH=0;
+    if(state.hdrText||state.hdrLogo){
+      const h=document.createElement('div');h.style.cssText='display:flex;align-items:center;gap:10px;font:11px sans-serif;color:#445;border-bottom:'+(state.hdrRule?'2px solid #1f4e9c':'none')+';padding:0 0 4px;width:'+W+'px;box-sizing:border-box;background:#fff';
+      h.innerHTML=(state.hdrLogo?'<img src="'+state.hdrLogo+'" style="max-height:40px">':'')+(state.hdrText?'<span style="'+(state.hdrLogo?'margin-left:auto;text-align:right;':'')+'white-space:pre-wrap;line-height:1.35">'+esc(state.hdrText)+'</span>':'');
+      box.appendChild(h);hdr=await html2canvas(h,{scale:S,backgroundColor:'#fff',logging:false});hH=h.offsetHeight+12;h.remove();}
+    const fH=(state.ftrText||state.ftrNum)?26:0;
+    const sh=$('#sheet').cloneNode(true);
+    sh.style.cssText='width:'+W+'px;max-width:none;margin:0;padding:0;box-shadow:none;min-height:0;background:#fff';
+    sh.querySelectorAll('#hdrPrev,#ftrPrev').forEach(e=>e.remove());
+    const d=sh.querySelector('#doc');d.style.minHeight='0';d.removeAttribute('contenteditable');d.classList.remove('marks');
+    sh.querySelectorAll('span.cm').forEach(e=>{e.style.background='none';e.style.borderBottom='none';});
+    sh.querySelectorAll('.pb').forEach(e=>{const x=document.createElement('div');x.className='pbx';e.replaceWith(x);});
+    box.appendChild(sh);
+    let breaks=[];
+    const cv=await html2canvas(sh,{scale:S,backgroundColor:'#fff',logging:false,windowWidth:W+40,onclone:(cd,el)=>{const t0=el.getBoundingClientRect().top;breaks=[...el.querySelectorAll('.pbx')].map(e=>Math.round((e.getBoundingClientRect().top-t0)*S));}});
+    const ctx=cv.getContext('2d',{willReadFrequently:true});
+    const pageH=Math.floor((PAGE-2*M-hH-fH)*S);
+    const white=y=>{const px=ctx.getImageData(0,y,cv.width,1).data;for(let i=0;i<px.length;i+=4)if(px[i]<245||px[i+1]<245||px[i+2]<245)return false;return true;};
+    const cuts=[];let y=0;
+    while(y<cv.height-2){
+      let end=Math.min(y+pageH,cv.height);
+      const fb=breaks.find(b=>b>y+4&&b<=end);
+      if(fb!==undefined)end=fb;
+      else if(end<cv.height){let k=end;const lim=end-Math.floor(pageH*.3);while(k>lim&&!white(k))k--;if(k>lim)end=k;}
+      cuts.push([y,end]);y=end;
+    }
+    const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'pt',format:'letter'});
+    const pt=.75,N=cuts.length;
+    cuts.forEach(([a,b],i)=>{
+      if(i)pdf.addPage();
+      if(hdr)pdf.addImage(hdr,'PNG',M*pt,M*pt,W*pt,hdr.height/S*pt);
+      const c=document.createElement('canvas');c.width=cv.width;c.height=b-a;
+      const cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);cx.drawImage(cv,0,a,cv.width,b-a,0,0,cv.width,b-a);
+      pdf.addImage(c.toDataURL('image/jpeg',.92),'JPEG',M*pt,(M+hH)*pt,W*pt,(b-a)/S*pt);
+      if(fH){pdf.setFontSize(8.5);pdf.setTextColor(110,110,120);const fy=(PAGE-M+14)*pt;
+        if(state.ftrText)pdf.text(String(state.ftrText).split('\n')[0],M*pt,fy);
+        if(state.ftrNum)pdf.text('Página '+(i+1)+' de '+N,(M+W)*pt,fy,{align:'right'});}
+    });
+    const blob=pdf.output('blob');
+    const name=($('#fname').value.trim()||'documento').replace(/[\\/:*?"<>|]+/g,'_')+'.pdf';
+    if(window.showSaveFilePicker){
+      try{const h=await showSaveFilePicker({suggestedName:name,types:[{description:'PDF',accept:{'application/pdf':['.pdf']}}]});
+        const w=await h.createWritable();await w.write(blob);await w.close();toast('PDF guardado: '+h.name+' ('+N+' pág.)');return;}
+      catch(err){if(err&&err.name==='AbortError'){toast('Cancelado',1200);return;}}
+    }
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
+    toast('PDF en Descargas: '+name+' ('+N+' pág.)');
+  }catch(err){console.error(err);toast('Error al generar PDF: '+err.message,5000);}
+  finally{box.remove();}
+}
+window.WorksPdf=exportPdf;
+
 
 /* ---------- autoguardado local (IndexedDB) ---------- */
 function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('works-editor',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}

@@ -1,5 +1,5 @@
-const CACHE='work-suite-v12';
-const FILES=['./','index.html','works.html','hoja.html','equipo.html','slides.html','lib/pptxgen.bundle.js','manifest.webmanifest','lib/mammoth.browser.min.js','lib/docx.umd.js','lib/jszip.min.js','lib/exceljs.min.js','icon-192.png','icon-512.png'];
+const CACHE='work-suite-v13';
+const FILES=['./','index.html','works.html','hoja.html','equipo.html','slides.html','lib/pptxgen.bundle.js','manifest.webmanifest','lib/mammoth.browser.min.js','lib/docx.umd.js','lib/jszip.min.js','lib/exceljs.min.js','lib/html2canvas.min.js','lib/jspdf.umd.min.js','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 // Páginas: primero la red (siempre la versión más nueva); sin internet, la copia guardada.

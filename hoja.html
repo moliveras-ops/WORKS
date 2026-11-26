@@ -178,6 +178,10 @@ body.rc #btnRibbon{transform:rotate(180deg)}
 #grid td{border-right:1px solid #d9dde2;border-bottom:1px solid #d9dde2;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:clip;color:#111;background:#fff;height:26px;cursor:cell}
 body.nogrid #grid td{border-color:transparent}
 #grid td.fz{position:sticky;z-index:2}
+#grid td.fz2{z-index:3}
+#grid td.fzl{box-shadow:inset -2px 0 0 #9aa0a8}
+#grid th.fzc{z-index:5}
+#grid th.rh.fz{z-index:4}
 #grid td.in{background-image:linear-gradient(rgba(245,179,1,.18),rgba(245,179,1,.18))}
 #grid td.act{outline:2px solid #f5b301;outline-offset:-2px;z-index:1}
 #grid td.ed{padding:0;overflow:visible}
@@ -287,14 +291,14 @@ body.compact #top,body.compact #sheetbar .x{display:none}
 
  <div class="rb" id="rb-datos">
   <div class="g"><div class="gb"><button class="b bb" data-act="sortA"><span class="ic">A↓</span>Ordenar A→Z</button><button class="b bb" data-act="sortD"><span class="ic">Z↓</span>Ordenar Z→A</button></div><div class="gl">Ordenar</div></div>
-  <div class="g"><div class="gb"><button class="b bb" data-act="freeze"><span class="ic">▭</span>Inmovilizar fila superior</button></div><div class="gl">Ventana</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="freeze"><span class="ic">▭</span>Inmovilizar paneles</button></div><div class="gl">Ventana</div></div>
   <div class="g"><div class="gb"><button class="b bb" data-act="openCsv"><span class="ic">⇩</span>Abrir CSV</button><button class="b bb" data-act="exportCsv"><span class="ic">⇧</span>Exportar CSV</button></div><div class="gl">CSV</div></div>
  </div>
 
  <div class="rb" id="rb-vista">
   <div class="g"><div class="gb"><button class="b bb" data-act="zoomOut"><span class="ic">−</span>Alejar</button><button class="b bb" data-act="zoom100"><span class="ic">100</span>100 %</button><button class="b bb" data-act="zoomIn"><span class="ic">+</span>Acercar</button></div><div class="gl">Zoom</div></div>
   <div class="g"><div class="gb"><button class="b bb on" data-act="gridlines" id="btnGl"><span class="ic">▦</span>Líneas de cuadrícula</button></div><div class="gl">Mostrar</div></div>
-  <div class="g"><div class="gb"><button class="b bb" data-act="ribbonToggle"><span class="ic">⌃</span>Contraer cinta</button><button class="b bb" data-act="compactToggle"><span class="ic">▭</span>Modo compacto</button><button class="b bb" data-act="fullscreen"><span class="ic">⤢</span>Pantalla completa</button></div><div class="gl">Ventana</div></div>
+  <div class="g"><div class="gb"><button class="b bb" data-act="freeze"><span class="ic">▭</span>Inmovilizar paneles</button><button class="b bb" data-act="ribbonToggle"><span class="ic">⌃</span>Contraer cinta</button><button class="b bb" data-act="compactToggle"><span class="ic">▭</span>Modo compacto</button><button class="b bb" data-act="fullscreen"><span class="ic">⤢</span>Pantalla completa</button></div><div class="gl">Ventana</div></div>
  </div>
 </div>
 
@@ -334,7 +338,7 @@ function parseAddr(a){const m=REFRE.exec(a);return m?{r:+m[4]-1,c:colIdx(m[2].to
 function parseRange(s){const p=String(s).split(':');const a=parseAddr(p[0]);const b=p[1]?parseAddr(p[1]):a;if(!a||!b)return null;return {r0:Math.min(a.r,b.r),c0:Math.min(a.c,b.c),r1:Math.max(a.r,b.r),c1:Math.max(a.c,b.c)};}
 
 /* ================= modelo ================= */
-function newSheet(name){return {name:name,cells:{},colW:{},rowH:{},merges:[],cf:[],frz:0};}
+function newSheet(name){return {name:name,cells:{},colW:{},rowH:{},merges:[],cf:[],frz:0,frzC:0};}
 let wb={sheets:[newSheet('Hoja1')],cur:0};
 const sh=()=>wb.sheets[wb.cur];
 const DEF_W=92,DEF_H=26,HDR_W=46;
@@ -585,6 +589,7 @@ function cfStyle(r,c){
   return out;
 }
 
+function frzInfo(){const s=sh();const r=s.frz||0,c=s.frzC||0;return (r||c)?('Ahora: '+r+' fila(s), '+c+' columna(s)'):'Nada inmovilizado';}
 /* ================= selección ================= */
 let sel={ar:0,ac:0,r:0,c:0},editing=null,extendMode=false,dragging=false,refTapAt=0;
 function selRect(){return {r0:Math.min(sel.ar,sel.r),r1:Math.max(sel.ar,sel.r),c0:Math.min(sel.ac,sel.c),c1:Math.max(sel.ac,sel.c)};}
@@ -611,7 +616,8 @@ function buildGrid(){
   ensureSize();const s=sh();mergeMap={};covered={};
   s.merges.forEach(m=>{mergeMap[m.r0+','+m.c0]=m;for(let r=m.r0;r<=m.r1;r++)for(let c=m.c0;c<=m.c1;c++)if(r!==m.r0||c!==m.c0)covered[r+','+c]=1;});
   let h='<colgroup><col style="width:'+HDR_W+'px">';for(let c=0;c<NC;c++)h+='<col style="width:'+colWidth(c)+'px">';h+='</colgroup>';
-  h+='<thead><tr><th class="corner"></th>';for(let c=0;c<NC;c++)h+='<th class="ch" data-c="'+c+'">'+colName(c)+'<span class="rz" data-c="'+c+'"></span></th>';h+='</tr></thead><tbody>';
+  h+='<thead><tr><th class="corner"></th>';let lx0=HDR_W;for(let c=0;c<NC;c++){h+='<th class="ch'+(c<(s.frzC||0)?' fzc':'')+'" data-c="'+c+'"'+(c<(s.frzC||0)?' style="left:'+lx0+'px"':'')+'>'+colName(c)+'<span class="rz" data-c="'+c+'"></span></th>';lx0+=colWidth(c);}h+='</tr></thead><tbody>';
+  const FC=s.frzC||0;const lefts=[];let lx=HDR_W;for(let c=0;c<FC;c++){lefts[c]=lx;lx+=colWidth(c);}
   let top=26;
   for(let r=0;r<NR;r++){
     const rh=rowHeight(r);
@@ -619,8 +625,9 @@ function buildGrid(){
     for(let c=0;c<NC;c++){
       const k=r+','+c;
       if(covered[k]){h+='<td class="cv" data-r="'+r+'" data-c="'+c+'"></td>';continue;}
-      const m=mergeMap[k];
-      h+='<td data-r="'+r+'" data-c="'+c+'"'+(m?' colspan="'+(m.c1-m.c0+1)+'" rowspan="'+(m.r1-m.r0+1)+'"':'')+(r<s.frz?' class="fz" style="top:'+top+'px"':'')+'></td>';
+      const m=mergeMap[k];const fr=r<s.frz,fc=c<FC;
+      const st=(fr?'top:'+top+'px;':'')+(fc?'left:'+lefts[c]+'px;':'');
+      h+='<td data-r="'+r+'" data-c="'+c+'"'+(m?' colspan="'+(m.c1-m.c0+1)+'" rowspan="'+(m.r1-m.r0+1)+'"':'')+(fr||fc?' class="fz'+(fr&&fc?' fz2':'')+(fc&&c===FC-1?' fzl':'')+'" data-st="'+st+'" style="'+st+'"':'')+'></td>';
     }
     h+='</tr>';if(r<s.frz)top+=rh;
   }
@@ -641,7 +648,7 @@ function refreshCell(r,c){
   if(st.wr)css+='white-space:normal;word-break:break-word;vertical-align:top;';
   if(st.bd){const q={t:'top',r:'right',b:'bottom',l:'left'};for(const ch of st.bd)css+='border-'+q[ch]+':1px solid #000;';}
   if(isErr(v))css+='color:#c0392b;';
-  td.style.cssText=td.style.cssText.match(/top:[^;]*;?/)&&td.classList.contains('fz')?css+('top:'+td.style.top+';'):css;
+  td.style.cssText=css+(td.dataset.st||'');
 }
 function refreshAll(){recalc();for(let r=0;r<NR;r++)for(let c=0;c<NC;c++)refreshCell(r,c);updateFx();updateStats();}
 let paintedIn=[],paintedHdr=[];
@@ -853,7 +860,14 @@ const acts={
   fillRight(){const q=selRect();if(q.c0===q.c1){toast('Selecciona la celda de origen y las de la derecha');return;}snap();
     for(let r=q.r0;r<=q.r1;r++){const x=cellAt(r,q.c0);for(let c=q.c0+1;c<=q.c1;c++){let raw=x?x.raw:'';if(typeof raw==='string'&&raw[0]==='=')raw=shiftFormula(raw,0,c-q.c0);setRaw(r,c,raw);if(x&&x.st&&Object.keys(x.st).length)setStyle(r,c,x.st);}}markDirty();refreshAll();},
   sortA(){sortSel(1);},sortD(){sortSel(-1);},
-  freeze(){snap();const s=sh();s.frz=s.frz?0:1;markDirty();buildGrid();toast(s.frz?'Fila superior inmovilizada':'Fila superior liberada');},
+  freeze(){const s=sh();
+    showPanel('<span>Inmovilizar paneles</span><button id="fzR">Fila superior</button><button id="fzC">Primera columna</button><button id="fzS">Hasta la celda '+colName(sel.c)+(sel.r+1)+'</button><button class="sec" id="fzN">Liberar</button><button class="sec" id="fzX">Cerrar</button><span id="fzInfo">'+frzInfo()+'</span>');
+    const set=(r,c,msg)=>{snap();s.frz=Math.min(r,30);s.frzC=Math.min(c,10);markDirty();buildGrid();$('#fzInfo').textContent=frzInfo();toast(msg);};
+    $('#fzR').onclick=()=>set(1,0,'Fila superior inmovilizada');
+    $('#fzC').onclick=()=>set(0,1,'Primera columna inmovilizada');
+    $('#fzS').onclick=()=>{if(!sel.r&&!sel.c){toast('Elige una celda que no sea A1: se inmovilizan las filas de arriba y las columnas de la izquierda');return;}set(sel.r,sel.c,'Inmovilizadas '+sel.r+' fila(s) y '+sel.c+' columna(s)');};
+    $('#fzN').onclick=()=>set(0,0,'Paneles liberados');
+    $('#fzX').onclick=hidePanel;},
   gridlines(){document.body.classList.toggle('nogrid');$('#btnGl').classList.toggle('on',!document.body.classList.contains('nogrid'));},
   zoomIn(){setZoom(zoom+0.1);},zoomOut(){setZoom(zoom-0.1);},zoom100(){setZoom(1);},
   panelFind(){showPanel('<input type="text" id="fdA" placeholder="Buscar"><input type="text" id="fdB" placeholder="Reemplazar por"><button id="fdNext" class="sec">Siguiente</button><button id="fdAll">Reemplazar todo</button><button class="sec" id="fdX">Cerrar</button><span id="fdInfo"></span>');
@@ -864,12 +878,21 @@ const acts={
       Object.keys(sh().cells).forEach(k=>{const x=sh().cells[k];if(typeof x.raw==='string'&&re.test(x.raw)){re.lastIndex=0;x.raw=x.raw.replace(re,()=>{n++;return $('#fdB').value;});}re.lastIndex=0;});
       $('#fdInfo').textContent=n+' reemplazos';if(n){markDirty();refreshAll();}else undoS.pop();};
     $('#fdX').onclick=hidePanel;},
-  panelCF(){const q=selRect();const ref=selLabel();
-    showPanel('<span>Rango <b>'+ref+'</b></span><select id="cfOp"><option value="lt">es menor que</option><option value="gt">es mayor que</option><option value="le">es menor o igual a</option><option value="ge">es mayor o igual a</option><option value="eq">es igual a</option><option value="ne">es distinto de</option><option value="txt">contiene el texto</option><option value="f">cumple la fórmula (ej. C2&lt;D2)</option></select><input type="text" id="cfVal" placeholder="Valor" style="width:150px"><select id="cfCol"><option value="r">Rojo</option><option value="y">Amarillo</option><option value="g">Verde</option></select><button id="cfOk">Agregar regla</button><button class="sec" id="cfClr">Quitar reglas del rango</button><button class="sec" id="cfX">Cerrar</button>');
-    const PAL={r:{bg:'#ffc7ce',fg:'#9c0006'},y:{bg:'#ffeb9c',fg:'#7f6000'},g:{bg:'#c6efce',fg:'#006100'}};
-    $('#cfOk').onclick=()=>{const v=$('#cfVal').value.trim();if(!v){toast('Escribe un valor');return;}snap();const p=PAL[$('#cfCol').value];
-      sh().cf.push({ref:ref,op:$('#cfOp').value,val:v.replace(/^=/,''),bg:p.bg,fg:p.fg});markDirty();refreshAll();toast('Regla agregada');};
-    $('#cfClr').onclick=()=>{snap();sh().cf=sh().cf.filter(x=>{const g=parseRange(x.ref);return !(g&&g.r0<=q.r1&&g.r1>=q.r0&&g.c0<=q.c1&&g.c1>=q.c0);});markDirty();refreshAll();};
+  panelCF(){const q=selRect();const ref=selLabel();const c0=colName(q.c0)+(q.r0+1);
+    const PAL={r:{bg:'#ffc7ce',fg:'#9c0006',n:'Rojo'},o:{bg:'#f8cbad',fg:'#833c0b',n:'Naranjo'},y:{bg:'#ffeb9c',fg:'#7f6000',n:'Amarillo'},g:{bg:'#c6efce',fg:'#006100',n:'Verde'},b:{bg:'#bdd7ee',fg:'#1f4e79',n:'Azul'},R:{bg:'#c00000',fg:'#ffffff',n:'Rojo intenso'}};
+    const OPS={lt:'es menor que',gt:'es mayor que',le:'es menor o igual a',ge:'es mayor o igual a',eq:'es igual a',ne:'es distinto de',btw:'está entre (ej. 5;10)',txt:'contiene el texto',ltc:'es menor que la celda (ej. D2)',gtc:'es mayor que la celda (ej. D2)',f:'cumple la fórmula (ej. C2<D2)'};
+    const list=()=>{const L=sh().cf;$('#cfList').innerHTML=L.length?L.map((x,i)=>'<span style="display:inline-flex;gap:6px;align-items:center;margin:2px 8px 2px 0"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:'+x.bg+';border:1px solid '+x.fg+'"></i><b>'+esc(x.ref)+'</b> '+esc(x.lbl?x.lbl:x.op==='f'?'fórmula '+x.val:(OPS[x.op]||x.op).replace(/ \(.*\)/,'')+' '+x.val)+' <button class="sec" data-del="'+i+'" style="min-height:28px;padding:0 8px">✕</button></span>').join(''):'<i>Sin reglas en esta hoja</i>';};
+    showPanel('<span>Rango <b>'+ref+'</b></span><select id="cfOp">'+Object.keys(OPS).map(k=>'<option value="'+k+'">'+OPS[k]+'</option>').join('')+'</select><input type="text" id="cfVal" placeholder="Valor" style="width:150px"><select id="cfCol">'+Object.keys(PAL).map(k=>'<option value="'+k+'">'+PAL[k].n+'</option>').join('')+'</select><button id="cfOk">Agregar regla</button><button class="sec" id="cfClr">Quitar reglas del rango</button><button class="sec" id="cfX">Cerrar</button><div id="cfList" style="flex-basis:100%;font-size:13px;color:#e8e9eb"></div>');
+    list();
+    $('#cfList').onclick=e=>{const d=e.target.closest('[data-del]');if(!d)return;snap();sh().cf.splice(+d.dataset.del,1);markDirty();refreshAll();list();};
+    $('#cfOp').onchange=()=>{const o=$('#cfOp').value;$('#cfVal').placeholder={btw:'mín;máx',txt:'Texto',ltc:'Celda, ej. D'+(q.r0+1),gtc:'Celda, ej. D'+(q.r0+1),f:'Fórmula, ej. '+c0+'<D'+(q.r0+1)}[o]||'Valor';};
+    $('#cfOk').onclick=()=>{let v=$('#cfVal').value.trim().replace(/^=/,'');if(!v){toast('Escribe un valor');return;}const p=PAL[$('#cfCol').value];let op=$('#cfOp').value;
+      let lbl='';
+      if(op==='ltc'||op==='gtc'){lbl=(op==='ltc'?'menor que ':'mayor que ')+v.toUpperCase();if(!parseAddr(v)){toast('Escribe una celda, por ejemplo D'+(q.r0+1));return;}v='AND(ISNUMBER('+c0+'),ISNUMBER('+v.toUpperCase()+'),'+c0+(op==='ltc'?'<':'>')+v.toUpperCase()+')';op='f';}
+      else if(op==='btw'){const m=v.split(/;|\s+y\s+|\s*-\s+/);const lo=parseFloat((m[0]||'').replace(',','.')),hi=parseFloat((m[1]||'').replace(',','.'));if(isNaN(lo)||isNaN(hi)){toast('Escribe mínimo y máximo separados por punto y coma, ej. 5;10');return;}
+        lbl='entre '+Math.min(lo,hi)+' y '+Math.max(lo,hi);v='AND(ISNUMBER('+c0+'),'+c0+'>='+Math.min(lo,hi)+','+c0+'<='+Math.max(lo,hi)+')';op='f';}
+      snap();const rule={ref:ref,op:op,val:v,bg:p.bg,fg:p.fg};if(lbl)rule.lbl=lbl;sh().cf.push(rule);markDirty();refreshAll();list();toast('Regla agregada');};
+    $('#cfClr').onclick=()=>{snap();sh().cf=sh().cf.filter(x=>{const g=parseRange(x.ref);return !(g&&g.r0<=q.r1&&g.r1>=q.r0&&g.c0<=q.c1&&g.c1>=q.c0);});markDirty();refreshAll();list();};
     $('#cfX').onclick=hidePanel;},
   fnHelp(){const L=['SUMA','PROMEDIO','MIN','MAX','CONTAR','CONTARA','MEDIANA','DESVEST','SI','SI.ERROR','Y','O','NO','REDONDEAR','REDONDEAR.MAS','REDONDEAR.MENOS','ABS','RAIZ','POTENCIA','RESIDUO','ENTERO','PI','CONCATENAR','LARGO','MAYUSC','MINUSC','ESNUMERO','ESTEXTO','ESBLANCO','SUMAR.SI','CONTAR.SI','PROMEDIO.SI','HOY'];
     showPanel('<div style="flex-basis:100%;font-size:13.5px;line-height:1.55;color:#e8e9eb">Funciones disponibles (también en inglés: SUM, AVERAGE, IF…). Separa argumentos con coma o punto y coma.<br><b>'+L.join(' · ')+'</b></div><button class="sec" id="fhX">Cerrar</button>');$('#fhX').onclick=hidePanel;},
@@ -1016,7 +1039,7 @@ async function buildXlsx(){
   const saveCur=wb.cur;
   wb.sheets.forEach((s,idx)=>{
     wb.cur=idx;recalc();
-    const ws=w.addWorksheet(s.name.replace(/[\[\]:*?\/\\]/g,'').slice(0,31)||('Hoja'+(idx+1)),{views:s.frz?[{state:'frozen',ySplit:s.frz}]:[]});
+    const ws=w.addWorksheet(s.name.replace(/[\[\]:*?\/\\]/g,'').slice(0,31)||('Hoja'+(idx+1)),{views:(s.frz||s.frzC)?[{state:'frozen',ySplit:s.frz||0,xSplit:s.frzC||0}]:[]});
     Object.keys(s.colW).forEach(c=>{ws.getColumn(+c+1).width=Math.max(1,(s.colW[c]-5)/7);});
     Object.keys(s.rowH).forEach(r=>{ws.getRow(+r+1).height=s.rowH[r]*0.75;});
     Object.keys(s.cells).forEach(k=>{
@@ -1075,7 +1098,7 @@ async function importXlsx(buf){
     });
     (ws.columns||[]).forEach((col,i)=>{if(col&&col.width)s.colW[i]=Math.round(col.width*7+5);});
     const mg=(ws.model&&ws.model.merges)||[];mg.forEach(m=>{const g=parseRange(m);if(g)s.merges.push(g);});
-    const v0=ws.views&&ws.views[0];if(v0&&v0.state==='frozen'&&v0.ySplit)s.frz=Math.min(3,v0.ySplit);
+    const v0=ws.views&&ws.views[0];if(v0&&v0.state==='frozen'){s.frz=Math.min(30,v0.ySplit||0);s.frzC=Math.min(10,v0.xSplit||0);}
     (ws.conditionalFormattings||[]).forEach(cf=>{(cf.rules||[]).forEach(rl=>{
       const st=rl.style||{};const fg=argbHex(st.font&&st.font.color&&st.font.color.argb)||'#9c0006';
       const bg=argbHex((st.fill&&(st.fill.bgColor&&st.fill.bgColor.argb))||(st.fill&&st.fill.fgColor&&st.fill.fgColor.argb))||'#ffc7ce';
@@ -1095,6 +1118,7 @@ $('#fileX').addEventListener('change',async e=>{
     toast('Abierto: '+f.name+' ('+sheets.length+' hoja'+(sheets.length>1?'s':'')+')');
   }catch(err){console.error(err);toast('No se pudo abrir el archivo (¿es un .xlsx válido?)',4500);}
 });
+window.WS_build=buildXlsx;
 async function saveXlsx(){
   try{if(editing)commitEdit(true);const blob=await buildXlsx();
     const name=($('#fname').value.trim()||'libro').replace(/[\\/:*?"<>|]+/g,'_')+'.xlsx';

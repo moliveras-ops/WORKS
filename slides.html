@@ -45,6 +45,23 @@ input[type=color]{width:38px;height:38px;padding:2px;background:var(--card2);bor
 #pres .x{position:absolute;right:12px;top:12px;z-index:2;opacity:.5}
 #msg{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--acc);color:#17181b;padding:10px 18px;border-radius:20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:60}
 #msg.on{opacity:1}
+#notesBar{display:none;border-top:1px solid var(--line);background:#131417;padding:6px 10px;gap:8px;align-items:flex-start}
+#notesBar.on{display:flex}
+#notesBar span{font-size:13px;color:var(--mut);padding-top:8px}
+#notes{flex:1;height:72px;resize:vertical;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font:14px system-ui,sans-serif;-webkit-user-select:text;user-select:text}
+#pres .pn{position:absolute;left:0;right:0;bottom:0;max-height:30%;overflow:auto;background:rgba(0,0,0,.82);color:#eee;font:16px system-ui,sans-serif;padding:10px 16px;white-space:pre-wrap;display:none;z-index:3}
+#pres.notes .pn{display:block}
+#pres .nb{position:absolute;right:110px;top:12px;z-index:4;opacity:.5}
+@keyframes tFade{from{opacity:0}to{opacity:1}}
+@keyframes tPush{from{transform:translateX(100%)}to{transform:none}}
+@keyframes tZoom{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+@keyframes tWipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+#pres .anim{position:absolute;inset:0}
+#pres .anim.fade{animation:tFade .6s ease}
+#pres .anim.push{animation:tPush .5s ease}
+#pres .anim.zoom{animation:tZoom .5s ease}
+#pres .anim.wipe{animation:tWipe .6s ease}
+.th .tr{position:absolute;right:4px;bottom:2px;font-size:11px;color:#a07d00;z-index:2;font-weight:700}
 @media (max-width:700px){#thumbs{width:110px}}
 </style>
 </head>
@@ -53,11 +70,17 @@ input[type=color]{width:38px;height:38px;padding:2px;background:var(--card2);bor
   <span class="brand">Works <b>Slides</b></span>
   <a class="lnk" href="index.html">⌂ Work Suite</a>
   <input id="fname" value="Presentación" aria-label="Nombre">
+  <label class="btn">📂 Abrir .pptx<input type="file" id="fOpen" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"></label>
   <button id="bNew">＋ Diapositiva</button>
   <select id="selLay" aria-label="Diseño"><option value="title">Título</option><option value="content" selected>Título y contenido</option><option value="head">Solo título</option><option value="blank">En blanco</option></select>
   <button id="bDup">Duplicar</button>
   <button id="bUp">↑</button><button id="bDown">↓</button>
   <button id="bDelS">Borrar diap.</button>
+  <span class="sep"></span>
+  <select id="selTheme" aria-label="Plantilla de diseño"><option value="">🎨 Plantilla…</option><option value="claro">Claro</option><option value="grafito">Grafito y amarillo</option><option value="azul">Azul técnico</option><option value="verde">Verde forestal</option><option value="gris">Gris ejecutivo</option></select>
+  <select id="selTr" aria-label="Transición"><option value="none">Transición: ninguna</option><option value="fade">Transición: desvanecer</option><option value="push">Transición: empujar</option><option value="wipe">Transición: barrido</option><option value="zoom">Transición: zoom</option></select>
+  <button id="bTrAll">Aplicar a todas</button>
+  <button id="bNotes">📝 Notas</button>
   <span class="sep"></span>
   <button id="bPres" class="gold">▶ Presentar</button>
   <button id="bExp" class="gold">⬇ Exportar .pptx</button>
@@ -84,9 +107,11 @@ input[type=color]{width:38px;height:38px;padding:2px;background:var(--card2);bor
   <div id="thumbs"></div>
   <div id="area"><div id="wrap"><div id="stage"></div></div></div>
 </div>
-<div id="pres"><button class="x" id="pX">✕ Salir</button><div class="pv" id="pv"></div></div>
+<div id="notesBar"><span>Notas del orador</span><textarea id="notes" placeholder="Escribe aquí lo que quieres decir en esta diapositiva (no se ve al presentar, salvo que actives Notas)"></textarea></div>
+<div id="pres"><button class="x" id="pX">✕ Salir</button><button class="nb" id="pN">📝 Notas</button><div class="pv" id="pv"></div><div class="pn" id="pNotes"></div></div>
 <div id="msg"></div>
 <script src="lib/pptxgen.bundle.js"></script>
+<script src="lib/jszip.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const W=960,H=540;
@@ -100,12 +125,29 @@ let uid=1;const nid=()=>'e'+(uid++);
 let deck={name:'Presentación',slides:[]};
 let cur=0,sel=null;
 const mkText=(text,x,y,w,h,size,bold,align,color)=>({id:nid(),t:'text',x,y,w,h,text,size,bold:!!bold,align:align||'left',color:color||'#222222'});
+const THEMES={
+  claro:{n:'Claro',bg:'#ffffff',title:'#222222',text:'#333333',acc:'#f5c400',bar:'none'},
+  grafito:{n:'Grafito y amarillo',bg:'#2b2d31',title:'#f5c400',text:'#ececec',acc:'#f5c400',bar:'left'},
+  azul:{n:'Azul técnico',bg:'#ffffff',title:'#1f4e79',text:'#262626',acc:'#1f4e79',bar:'top'},
+  verde:{n:'Verde forestal',bg:'#f4f8f3',title:'#2e5e3a',text:'#2b2b2b',acc:'#6aa84f',bar:'bottom'},
+  gris:{n:'Gris ejecutivo',bg:'#f2f2f2',title:'#3a3a3a',text:'#404040',acc:'#c00000',bar:'top'}};
+function decoFor(th){const a=th.acc;if(th.bar==='left')return {id:nid(),t:'rect',x:0,y:0,w:14,h:H,fill:a,deco:1};if(th.bar==='top')return {id:nid(),t:'rect',x:0,y:0,w:W,h:12,fill:a,deco:1};if(th.bar==='bottom')return {id:nid(),t:'rect',x:0,y:H-16,w:W,h:16,fill:a,deco:1};return null;}
+function applyTheme(slide,th){
+  slide.els=slide.els.filter(e=>!e.deco);slide.bg=th.bg;
+  const texts=slide.els.filter(e=>e.t==='text');
+  const known=new Set(['#222222','#333333','#555555','#000000','#ffffff'].concat(...Object.values(THEMES).map(t=>[t.title,t.text])).map(c=>c.toLowerCase()));
+  texts.forEach((e,i)=>{if(!e.color||known.has(String(e.color).toLowerCase()))e.color=(i===0||e.role==='title')?th.title:th.text;});
+  const d=decoFor(th);if(d)slide.els.unshift(d);
+}
 function layout(k){
   const e=[];
   if(k==='title'){e.push(mkText('Título de la presentación',80,170,800,120,54,true,'center'),mkText('Subtítulo',80,310,800,60,28,false,'center','#555555'));}
   else if(k==='content'){e.push(mkText('Título',50,30,860,80,40,true),mkText('• Primer punto\n• Segundo punto\n• Tercer punto',50,130,860,360,28,false));}
   else if(k==='head'){e.push(mkText('Título',50,30,860,80,40,true));}
-  return{bg:'#ffffff',els:e};
+  if(e[0])e[0].role='title';
+  const sl={bg:'#ffffff',els:e,tr:deck.tr||'none',notes:''};
+  if(deck.theme&&THEMES[deck.theme])applyTheme(sl,THEMES[deck.theme]);
+  return sl;
 }
 const S=()=>deck.slides[cur];
 const getEl=id=>S().els.find(e=>e.id===id);
@@ -127,9 +169,10 @@ function fit(){const a=$('#area');scale=Math.min((a.clientWidth-28)/W,(a.clientH
 function render(){
   if(!deck.slides.length)deck.slides.push(layout('title'));
   cur=Math.max(0,Math.min(cur,deck.slides.length-1));
-  paintInto($('#stage'),S(),true);$('#cBg').value=S().bg;
+  paintInto($('#stage'),S(),true);$('#cBg').value=/^#[0-9a-f]{6}$/i.test(S().bg)?S().bg:'#ffffff';
+  if(document.activeElement!==$('#notes'))$('#notes').value=S().notes||'';$('#selTr').value=S().tr||'none';
   const th=$('#thumbs');th.innerHTML='';
-  deck.slides.forEach((s,i)=>{const t=document.createElement('div');t.className='th'+(i===cur?' on':'');const m=document.createElement('div');m.className='mini';paintInto(m,s,false);const w=th.clientWidth-20-4;m.style.transform=`scale(${(w||140)/W})`;t.innerHTML=`<span class="num">${i+1}</span>`;t.appendChild(m);t.onclick=()=>{cur=i;sel=null;render();};th.appendChild(t);});
+  deck.slides.forEach((s,i)=>{const t=document.createElement('div');t.className='th'+(i===cur?' on':'');const m=document.createElement('div');m.className='mini';paintInto(m,s,false);const w=th.clientWidth-20-4;m.style.transform=`scale(${(w||140)/W})`;t.innerHTML=`<span class="num">${i+1}</span>`+((s.tr&&s.tr!=='none')?'<span class="tr">★</span>':'')+((s.notes||'').trim()?'<span class="tr" style="right:18px">✎</span>':'');t.appendChild(m);t.onclick=()=>{cur=i;sel=null;render();};th.appendChild(t);});
   const e=sel&&getEl(sel);if(e){if(e.t==='text'){$('#cTxt').value=e.color;}if(e.fill)$('#cFill').value=e.fill;}
 }
 function refreshOne(){render();changed();}
@@ -198,6 +241,19 @@ $('#bDelS').onclick=()=>{if(deck.slides.length<2){toast('Debe quedar al menos un
 $('#bUp').onclick=()=>{if(cur>0){[deck.slides[cur-1],deck.slides[cur]]=[deck.slides[cur],deck.slides[cur-1]];cur--;refreshOne();}};
 $('#bDown').onclick=()=>{if(cur<deck.slides.length-1){[deck.slides[cur+1],deck.slides[cur]]=[deck.slides[cur],deck.slides[cur+1]];cur++;refreshOne();}};
 $('#fname').oninput=e=>{deck.name=e.target.value;changed();};
+$('#bNotes').onclick=()=>{$('#notesBar').classList.toggle('on');$('#bNotes').classList.toggle('on');fit();render();};
+$('#notes').oninput=e=>{S().notes=e.target.value;changed();};
+$('#notes').onblur=()=>render();
+$('#selTr').onchange=e=>{S().tr=e.target.value;refreshOne();toast(e.target.value==='none'?'Sin transición':'Transición aplicada a esta diapositiva');};
+$('#bTrAll').onclick=()=>{const v=$('#selTr').value;deck.tr=v;deck.slides.forEach(x=>x.tr=v);refreshOne();toast('Transición aplicada a todas las diapositivas');};
+$('#selTheme').onchange=e=>{const k=e.target.value;e.target.value='';if(!k)return;const th=THEMES[k];
+  if(!confirm('¿Aplicar la plantilla "'+th.n+'" a todas las diapositivas? Cambia fondos y colores de texto.'))return;
+  deck.theme=k;deck.slides.forEach(x=>applyTheme(x,th));sel=null;refreshOne();toast('Plantilla aplicada: '+th.n);};
+$('#fOpen').onchange=async ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;
+  if(deck.slides.length>1||S().els.length>2){if(!confirm('¿Abrir "'+f.name+'"? Reemplaza la presentación actual.'))return;}
+  toast('Abriendo '+f.name+'…');
+  try{const d=await importPptx(await f.arrayBuffer());deck=d;deck.name=f.name.replace(/\.pptx$/i,'');$('#fname').value=deck.name;cur=0;sel=null;refreshOne();toast('Abierto: '+deck.slides.length+' diapositivas');}
+  catch(err){console.error(err);toast('No se pudo abrir: '+(err.message||err));}};
 document.addEventListener('keydown',ev=>{
   if(ev.target.isContentEditable||ev.target.tagName==='INPUT')return;
   if(ev.key==='Delete'&&sel){$('#bDel').click();}
@@ -205,13 +261,102 @@ document.addEventListener('keydown',ev=>{
 
 // ---------- presentar ----------
 let pi=0;
-function showP(){const pv=$('#pv');const k=Math.min(innerWidth/W,innerHeight/H);pv.style.cssText=`width:${W}px;height:${H}px;transform:scale(${k});position:absolute;left:${(innerWidth-W*k)/2}px;top:${(innerHeight-H*k)/2}px;background:${deck.slides[pi].bg}`;paintInto(pv,deck.slides[pi],false);pv.style.background=deck.slides[pi].bg;}
-$('#bPres').onclick=()=>{pi=cur;$('#pres').classList.add('on');showP();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}catch(e){}};
+function showP(anim){const pv=$('#pv');const k=Math.min(innerWidth/W,innerHeight/H);const sl=deck.slides[pi];pv.style.cssText=`width:${W}px;height:${H}px;transform:scale(${k});position:absolute;left:${(innerWidth-W*k)/2}px;top:${(innerHeight-H*k)/2}px;background:#000`;
+  pv.innerHTML='';const inner=document.createElement('div');inner.className='anim'+(anim&&sl.tr&&sl.tr!=='none'?' '+sl.tr:'');paintInto(inner,sl,false);pv.appendChild(inner);
+  $('#pNotes').textContent=(sl.notes||'').trim()||'(Sin notas en esta diapositiva)';}
+$('#bPres').onclick=()=>{pi=cur;$('#pres').classList.add('on');showP(false);try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}catch(e){}};
 function endP(){$('#pres').classList.remove('on');try{document.fullscreenElement&&document.exitFullscreen();}catch(e){}}
 $('#pX').onclick=ev=>{ev.stopPropagation();endP();};
-$('#pres').addEventListener('click',ev=>{if(ev.target.id==='pX')return;const right=ev.clientX>innerWidth*0.3;if(right){if(pi<deck.slides.length-1){pi++;showP();}else endP();}else if(pi>0){pi--;showP();}});
-document.addEventListener('keydown',ev=>{if(!$('#pres').classList.contains('on'))return;if(['ArrowRight','ArrowDown',' ','PageDown'].includes(ev.key)){if(pi<deck.slides.length-1){pi++;showP();}else endP();}else if(['ArrowLeft','ArrowUp','PageUp'].includes(ev.key)){if(pi>0){pi--;showP();}}else if(ev.key==='Escape')endP();});
-addEventListener('resize',()=>{fit();if($('#pres').classList.contains('on'))showP();render();});
+$('#pN').onclick=ev=>{ev.stopPropagation();$('#pres').classList.toggle('notes');};
+$('#pres').addEventListener('click',ev=>{if(ev.target.id==='pX'||ev.target.id==='pN'||ev.target.closest('#pNotes'))return;const right=ev.clientX>innerWidth*0.3;if(right){if(pi<deck.slides.length-1){pi++;showP(true);}else endP();}else if(pi>0){pi--;showP(false);}});
+document.addEventListener('keydown',ev=>{if(!$('#pres').classList.contains('on'))return;if(['ArrowRight','ArrowDown',' ','PageDown'].includes(ev.key)){if(pi<deck.slides.length-1){pi++;showP(true);}else endP();}else if(['ArrowLeft','ArrowUp','PageUp'].includes(ev.key)){if(pi>0){pi--;showP(false);}}else if(ev.key==='Escape')endP();});
+addEventListener('resize',()=>{fit();if($('#pres').classList.contains('on'))showP(false);render();});
+
+
+// ---------- abrir .pptx ----------
+async function importPptx(buf){
+  const z=await JSZip.loadAsync(buf);
+  const P=new DOMParser();
+  const xml=async p=>{const f=z.file(p);return f?P.parseFromString(await f.async('string'),'application/xml'):null;};
+  const kids=(n,name)=>n?[...n.children].filter(c=>c.localName===name):[];
+  const kid=(n,name)=>kids(n,name)[0]||null;
+  const desc=(n,name)=>n?[...n.getElementsByTagNameNS('*',name)]:[];
+  const dir=p=>p.slice(0,p.lastIndexOf('/')+1);
+  const resolve=(base,t)=>{const parts=(dir(base)+t).split('/');const o=[];parts.forEach(x=>{if(x==='..')o.pop();else if(x&&x!=='.')o.push(x);});return o.join('/');};
+  async function rels(p){const r=await xml(dir(p)+'_rels/'+p.slice(p.lastIndexOf('/')+1)+'.rels');const m={};if(r)desc(r,'Relationship').forEach(x=>m[x.getAttribute('Id')]={t:resolve(p,x.getAttribute('Target')),type:x.getAttribute('Type')||'',ext:x.getAttribute('TargetMode')==='External'});return m;}
+  const pres=await xml('ppt/presentation.xml');if(!pres)throw new Error('no es una presentación válida');
+  const sz=desc(pres,'sldSz')[0];const cx=+(sz&&sz.getAttribute('cx')||12192000),cy=+(sz&&sz.getAttribute('cy')||6858000);
+  const k=Math.min(W/cx,H/cy),ox=(W-cx*k)/2,oy=(H-cy*k)/2;
+  const ptPx=12700*k; // 1 pt en px de la diapositiva
+  const prel=await rels('ppt/presentation.xml');
+  const order=desc(pres,'sldId').map(n=>prel[n.getAttribute('r:id')||n.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id')]).filter(Boolean).map(r=>r.t);
+  // colores del tema
+  const theme={};
+  const thf=Object.keys(z.files).find(n=>/^ppt\/theme\/theme\d+\.xml$/.test(n));
+  if(thf){const t=await xml(thf);const cs=desc(t,'clrScheme')[0];if(cs)[...cs.children].forEach(c=>{const v=c.firstElementChild;if(v)theme[c.localName]=v.getAttribute('lastClr')||v.getAttribute('val');});}
+  const TMAP={tx1:'dk1',bg1:'lt1',tx2:'dk2',bg2:'lt2'};
+  const color=n=>{if(!n)return null;const s=kid(n,'srgbClr');if(s)return '#'+s.getAttribute('val');const sc=kid(n,'schemeClr');if(sc){const v=theme[TMAP[sc.getAttribute('val')]||sc.getAttribute('val')];if(v)return '#'+v;}const sy=kid(n,'sysClr');if(sy)return '#'+(sy.getAttribute('lastClr')||'000000');return null;};
+  const xf=n=>{const x=n&&desc(n,'xfrm')[0];if(!x)return null;const o=kid(x,'off'),e=kid(x,'ext');if(!o||!e)return null;return {x:+o.getAttribute('x'),y:+o.getAttribute('y'),w:+e.getAttribute('cx'),h:+e.getAttribute('cy')};};
+  const phKey=sp=>{const ph=desc(sp,'ph')[0];if(!ph)return null;return {type:ph.getAttribute('type')||'body',idx:ph.getAttribute('idx')};};
+  async function phTable(path){const d=await xml(path);const m=[];if(!d)return m;desc(d,'sp').forEach(sp=>{const k2=phKey(sp);if(!k2)return;const r=desc(sp,'rPr')[0]||desc(sp,'defRPr')[0];m.push({...k2,x:xf(sp),sz:r&&r.getAttribute('sz')?+r.getAttribute('sz')/100:null,algn:(desc(sp,'pPr')[0]||{getAttribute:()=>null}).getAttribute('algn')});});return {list:m,doc:d};}
+  const masterCache={};
+  async function bgOf(d){const bg=d&&desc(d,'bg')[0];if(!bg)return null;const sf=desc(bg,'solidFill')[0];return sf?color(sf):null;}
+  const slides=[];
+  for(const sp of order){
+    const d=await xml(sp);if(!d)continue;const r=await rels(sp);
+    const layP=Object.values(r).find(x=>/slideLayout/.test(x.type));
+    let lay={list:[]},mas={list:[]},masDoc=null,layDoc=null;
+    if(layP){const t=await phTable(layP.t);lay=t;layDoc=t.doc;const lr=await rels(layP.t);const mp=Object.values(lr).find(x=>/slideMaster/.test(x.type));
+      if(mp){if(!masterCache[mp.t])masterCache[mp.t]=await phTable(mp.t);mas=masterCache[mp.t];masDoc=mas.doc;}}
+    const findPh=(tbl,key)=>tbl.list.find(p=>key.idx!=null&&p.idx===key.idx)||tbl.list.find(p=>p.type===key.type)||(['title','ctrTitle'].includes(key.type)?tbl.list.find(p=>p.type==='title'||p.type==='ctrTitle'):null)||(key.type==='subTitle'?tbl.list.find(p=>p.type==='body'):null);
+    const slide={bg:(await bgOf(d))||(await bgOf(layDoc))||(await bgOf(masDoc))||'#ffffff',els:[],tr:'none',notes:''};
+    const tr=desc(d,'transition')[0];if(tr){const c=tr.firstElementChild;const n=c&&c.localName;slide.tr={fade:'fade',push:'push',wipe:'wipe',zoom:'zoom',cover:'push',split:'wipe',dissolve:'fade'}[n]||(c?'fade':'none');}
+    async function walk(node,tf){
+      for(const n of node.children){
+        const ln=n.localName;
+        if(ln==='grpSp'){const g=desc(kid(n,'grpSpPr'),'xfrm')[0];let t2=tf;
+          if(g){const o=kid(g,'off'),e=kid(g,'ext'),co=kid(g,'chOff'),ce=kid(g,'chExt');if(o&&e&&co&&ce){const sx=(+e.getAttribute('cx'))/((+ce.getAttribute('cx'))||1),sy=(+e.getAttribute('cy'))/((+ce.getAttribute('cy'))||1);
+            const ax=+o.getAttribute('x')-(+co.getAttribute('x'))*sx,ay=+o.getAttribute('y')-(+co.getAttribute('y'))*sy;t2=p=>tf({x:ax+p.x*sx,y:ay+p.y*sy,w:p.w*sx,h:p.h*sy});}}
+          await walk(n,t2);continue;}
+        if(ln!=='sp'&&ln!=='pic'&&ln!=='graphicFrame'&&ln!=='cxnSp')continue;
+        let box=xf(ln==='graphicFrame'?kid(n,'xfrm')?n:n:kid(n,'spPr'));
+        if(ln==='graphicFrame'){const x=kid(n,'xfrm');if(x){const o=kid(x,'off'),e=kid(x,'ext');box={x:+o.getAttribute('x'),y:+o.getAttribute('y'),w:+e.getAttribute('cx'),h:+e.getAttribute('cy')};}}
+        const key=phKey(n);let phL=null,phM=null;
+        if(key){phL=findPh(lay,key);phM=findPh(mas,key);if(!box)box=(phL&&phL.x)||(phM&&phM.x);}
+        if(!box)continue;
+        const b=tf(box);const pos={x:Math.round(ox+b.x*k),y:Math.round(oy+b.y*k),w:Math.max(4,Math.round(b.w*k)),h:Math.max(4,Math.round(b.h*k))};
+        if(ln==='pic'){const bl=desc(n,'blip')[0];const rid=bl&&(bl.getAttribute('r:embed')||bl.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','embed'));const rr=rid&&r[rid];
+          if(rr&&!rr.ext&&z.file(rr.t)){const ext=rr.t.split('.').pop().toLowerCase();const mime={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',svg:'image/svg+xml',webp:'image/webp'}[ext];
+            if(mime){const b64=await z.file(rr.t).async('base64');slide.els.push({id:nid(),t:'img',...pos,src:'data:'+mime+';base64,'+b64});}}
+          continue;}
+        if(ln==='graphicFrame'){const tbl=desc(n,'tbl')[0];if(!tbl)continue;
+          const rows=desc(tbl,'tr').map(tr=>kids(tr,'tc').map(tc=>desc(tc,'t').map(t=>t.textContent).join('')).join('   |   '));
+          slide.els.push({id:nid(),t:'text',...pos,text:rows.join('\n'),size:Math.max(10,Math.round(14*ptPx)),bold:false,align:'left',color:'#222222'});continue;}
+        const spPr=kid(n,'spPr');const sf=spPr&&kid(spPr,'solidFill');const fill=sf?color(sf):null;
+        const tx=kid(n,'txBody');
+        const paras=tx?kids(tx,'p'):[];
+        const text=paras.map(p=>{let t='';for(const c of p.children){if(c.localName==='r'||c.localName==='fld')t+=desc(c,'t').map(x=>x.textContent).join('');else if(c.localName==='br')t+='\n';}
+          const pPr=kid(p,'pPr');const bullet=pPr&&(kid(pPr,'buChar')||kid(pPr,'buAutoNum'));const lvl=pPr?+(pPr.getAttribute('lvl')||0):0;
+          return (t&&(bullet||(key&&key.type==='body'&&!(pPr&&kid(pPr,'buNone'))))?'  '.repeat(lvl)+'• ':'')+t;}).join('\n').replace(/\s+$/,'');
+        if(text.trim()){
+          const r1=desc(tx,'rPr').find(x=>x.getAttribute('sz'))||null;const rAny=desc(tx,'rPr')[0];
+          const isTitle=key&&/^(title|ctrTitle)$/.test(key.type);
+          const ptSz=r1?+r1.getAttribute('sz')/100:((phL&&phL.sz)||(phM&&phM.sz)||(isTitle?(key.type==='ctrTitle'?44:36):18));
+          const pPr0=desc(tx,'pPr').find(x=>x.getAttribute('algn'));const algn=(pPr0&&pPr0.getAttribute('algn'))||(phL&&phL.algn)||(phM&&phM.algn)||(key&&key.type==='ctrTitle'?'ctr':'l');
+          const fc=rAny&&kid(rAny,'solidFill');const col=fc?color(fc):null;
+          const el={id:nid(),t:'text',...pos,text,size:Math.max(8,Math.round(ptSz*ptPx)),bold:!!(rAny&&(rAny.getAttribute('b')==='1'||rAny.getAttribute('b')==='true')),align:{ctr:'center',r:'right',just:'left'}[algn]||'left',color:col||(isTitle?'#222222':'#333333')};
+          if(isTitle)el.role='title';if(fill)el.fill=fill;slide.els.push(el);}
+        else if(fill)slide.els.push({id:nid(),t:'rect',...pos,fill});
+      }
+    }
+    const tree=desc(d,'spTree')[0];if(tree)await walk(tree,p=>p);
+    const np=Object.values(r).find(x=>/notesSlide/.test(x.type));
+    if(np){const nd=await xml(np.t);if(nd){const body=desc(nd,'sp').find(sp=>{const k2=phKey(sp);return k2&&k2.type==='body';});if(body)slide.notes=desc(body,'p').map(p=>desc(p,'t').map(t=>t.textContent).join('')).join('\n').trim();}}
+    slides.push(slide);
+  }
+  if(!slides.length)throw new Error('no se encontraron diapositivas');
+  return {name:'Presentación',slides};
+}
 
 // ---------- exportar .pptx ----------
 const hex=c=>String(c||'').replace('#','').toUpperCase();
@@ -220,6 +365,7 @@ $('#bExp').onclick=async()=>{
     const p=new PptxGenJS();p.layout='LAYOUT_16x9';const k=10/W,pt=0.75;
     deck.slides.forEach(s=>{
       const sl=p.addSlide();sl.background={color:hex(s.bg)};
+      if((s.notes||'').trim())sl.addNotes(s.notes);
       s.els.forEach(e=>{
         const o={x:e.x*k,y:e.y*k,w:e.w*k,h:e.h*k};
         if(e.t==='text'){const lines=String(e.text).split('\n');
@@ -231,7 +377,18 @@ $('#bExp').onclick=async()=>{
         else if(e.t==='img')sl.addImage({data:e.src,...o});
       });
     });
-    await p.writeFile({fileName:(deck.name||'Presentación')+'.pptx'});toast('Exportado: '+(deck.name||'Presentación')+'.pptx');
+    const buf=await p.write({outputType:'arraybuffer'});
+    const z=await JSZip.loadAsync(buf);
+    const TRX={fade:'<p:fade/>',push:'<p:push dir="l"/>',wipe:'<p:wipe dir="r"/>',zoom:'<p:zoom/>'};
+    for(let i=0;i<deck.slides.length;i++){const t=deck.slides[i].tr;if(!t||t==='none'||!TRX[t])continue;
+      const fn='ppt/slides/slide'+(i+1)+'.xml';const f=z.file(fn);if(!f)continue;let x=await f.async('string');
+      const tag='<p:transition spd="med">'+TRX[t]+'</p:transition>';
+      if(x.includes('</p:clrMapOvr>'))x=x.replace('</p:clrMapOvr>','</p:clrMapOvr>'+tag);else x=x.replace('</p:cSld>','</p:cSld>'+tag);
+      z.file(fn,x);}
+    const blob=await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.presentationml.presentation',compression:'DEFLATE'});
+    const name=(deck.name||'Presentación').replace(/[\\/:*?"<>|]+/g,'_')+'.pptx';
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
+    toast('Exportado: '+name);
   }catch(err){toast('Error al exportar: '+(err.message||err));}
 };
 
@@ -241,7 +398,7 @@ $('#bExp').onclick=async()=>{
   if(st&&st.deck&&st.deck.slides&&st.deck.slides.length){deck=st.deck;uid=st.uid||1000;$('#fname').value=deck.name||'Presentación';}
   fit();render();
 })();
-window.WorksSlides={get deck(){return deck;}};
+window.WorksSlides={get deck(){return deck;},importPptx,set deck(v){deck=v;cur=0;sel=null;render();}};
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
 </script>
 </body>

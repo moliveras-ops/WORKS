@@ -48,6 +48,24 @@ label.btn input{display:none}
 .p .t{font-size:12px;color:var(--txt);margin-top:4px}
 #msg{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--acc);color:#17181b;padding:10px 18px;border-radius:20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
 #msg.on{opacity:1}
+#q{background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:0 10px;min-height:38px;width:200px;font-size:14px}
+#qn{font-size:12.5px;color:var(--acc)}
+.p{cursor:pointer;transition:opacity .2s}
+.p.dim{opacity:.22}
+.p.hit{box-shadow:0 0 0 3px var(--acc)}
+.p.cur{box-shadow:0 0 0 4px #fff,0 0 0 7px var(--acc)}
+#dlg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40;padding:12px}
+#dlg.on{display:flex}
+#dlg .box{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--acc);border-radius:12px;padding:16px;width:min(440px,100%);max-height:92vh;overflow:auto}
+#dlg h3{margin:0 0 10px}
+#dlg label{display:block;font-size:13px;color:var(--mut);margin:8px 0 3px}
+#dlg input,#dlg select{width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:0 10px;min-height:40px;font-size:15px}
+#dlg .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#dlg .ph2{width:84px;height:84px;border-radius:50%;background:var(--card2) center/cover no-repeat;border:2px solid var(--acc);margin:0 auto 6px}
+button.red{border-color:#c0392b;color:#ff8a80}
+.tree.light .p{background:#fff;color:#111;border-color:#bbb}.tree.light .p .n,.tree.light .p .t{color:#111}.tree.light .p .c{color:#8a6d00}.tree.light .p .a{color:#555}.tree.light .p .ph{background-color:#eee}
+.tree.light li::before,.tree.light li::after,.tree.light ul ul::before{border-color:#888!important}
+.tree.light .p.dim{opacity:1}.tree.light .p.hit,.tree.light .p.cur{box-shadow:none}
 @media print{body{background:#fff;color:#000;overflow:visible;height:auto}#top,#msg{display:none}#stage{overflow:visible;padding:0}.p{background:#fff;color:#000;border-color:#999}.p .n,.p .t{color:#000}.p .c{color:#8a6d00}.p .a{color:#555}.tree li::before,.tree li::after,.tree ul ul::before{border-color:#888!important}@page{size:landscape;margin:10mm}}
 </style>
 </head>
@@ -58,13 +76,31 @@ label.btn input{display:none}
   <label class="btn gold">📊 Cargar / actualizar Excel<input type="file" id="fxl" accept=".xlsx,.xlsm"></label>
   <label class="btn">🖼 Cargar fotos<input type="file" id="fph" accept="image/*" multiple></label>
   <button id="btnTpl">⬇ Plantilla</button>
-  <button id="btnPrint">🖨 Imprimir / PDF</button>
+  <button id="btnAdd">＋ Persona</button>
+  <button id="btnXls">⬇ Excel</button>
+  <button id="btnPng">🖼 Imagen</button>
+  <button id="btnPdf">📄 PDF</button>
+  <button id="btnPrint">🖨 Imprimir</button>
+  <input id="q" type="search" placeholder="🔍 Buscar nombre, cargo o planta" autocomplete="off"><span id="qn"></span>
   <input type="range" id="zoom" min="40" max="130" value="100" title="Zoom">
   <span id="info"></span>
 </div>
 <div id="stage"><div id="chart" class="tree"></div></div>
 <div id="msg"></div>
+<div id="dlg"><div class="box">
+  <h3 id="dT">Editar persona</h3>
+  <div class="ph2" id="dPh"></div>
+  <div class="row" style="justify-content:center;margin-top:4px"><label class="btn">🖼 Cambiar foto<input type="file" id="dFile" accept="image/*"></label><label class="btn">📷 Cámara<input type="file" id="dCam" accept="image/*" capture="user"></label><button id="dPhX">Quitar foto</button></div>
+  <label>Nombre</label><input id="dN">
+  <label>Cargo</label><input id="dC">
+  <label>Teléfono</label><input id="dTel" inputmode="tel">
+  <label>Área / Planta</label><input id="dA" list="areas"><datalist id="areas"></datalist>
+  <label>Reporta a</label><select id="dJ"></select>
+  <div class="row"><button class="gold" id="dOk">Guardar</button><button id="dX">Cancelar</button><span style="flex:1"></span><button class="red" id="dDel">Eliminar</button></div>
+</div></div>
 <script src="lib/exceljs.min.js"></script>
+<script src="lib/html2canvas.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
 <script>
 // ---------- utilidades ----------
 const $=s=>document.querySelector(s);
@@ -135,7 +171,7 @@ function buildForest(){
 function nodeHTML(p,depth){
   if(depth>40)return'';
   const ph=photoOf(p);const ini=esc((p.nombre.match(/\p{L}/gu)||[]).slice(0,1).join('').toUpperCase());
-  const card=`<div class="p"><div class="ph"${ph?` style="background-image:url(${ph})"`:''}>${ph?'':ini}</div><div class="n">${esc(p.nombre)}</div>${p.cargo?`<div class="c">${esc(p.cargo)}</div>`:''}${p.area?`<div class="a">${esc(p.area)}</div>`:''}${p.telefono?`<div class="t">☎ ${esc(p.telefono)}</div>`:''}</div>`;
+  const card=`<div class="p" data-i="${people.indexOf(p)}"><div class="ph"${ph?` style="background-image:url(${ph})"`:''}>${ph?'':ini}</div><div class="n">${esc(p.nombre)}</div>${p.cargo?`<div class="c">${esc(p.cargo)}</div>`:''}${p.area?`<div class="a">${esc(p.area)}</div>`:''}${p.telefono?`<div class="t">☎ ${esc(p.telefono)}</div>`:''}</div>`;
   const kids=p.kids&&p.kids.length?'<ul>'+p.kids.map(k=>nodeHTML(k,depth+1)).join('')+'</ul>':'';
   return`<li>${card}${kids}</li>`;
 }
@@ -146,6 +182,7 @@ function render(){
   c.innerHTML='<ul>'+roots.map(r=>nodeHTML(r,0)).join('')+'</ul>';
   const withPh=people.filter(photoOf).length;
   $('#info').textContent=people.length+' personas · '+withPh+' con foto';
+  applySearch(false);
 }
 
 // ---------- eventos ----------
@@ -159,6 +196,96 @@ $('#btnTpl').onclick=downloadTemplate;
 $('#btnPrint').onclick=()=>{$('#chart').style.transform='none';window.print();applyZoom();};
 function applyZoom(){const z=$('#zoom').value/100;$('#chart').style.transform='scale('+z+')';}
 $('#zoom').addEventListener('input',applyZoom);
+
+// ---------- buscador ----------
+let hits=[],hitI=-1;
+function applySearch(jump){
+  const q=norm($('#q').value);const cards=[...document.querySelectorAll('#chart .p')];hits=[];
+  cards.forEach(c=>{c.classList.remove('dim','hit','cur');if(!q)return;const p=people[+c.dataset.i];const t=norm([p.nombre,p.cargo,p.area,p.telefono].join(' '));
+    if(t.includes(q)){c.classList.add('hit');hits.push(c);}else c.classList.add('dim');});
+  $('#qn').textContent=q?(hits.length?hits.length+' encontrado(s)':'Sin resultados'):'';
+  if(jump&&hits.length){hitI=(hitI+1)%hits.length;hits.forEach(h=>h.classList.remove('cur'));hits[hitI].classList.add('cur');hits[hitI].scrollIntoView({behavior:'smooth',block:'center',inline:'center'});}
+}
+$('#q').addEventListener('input',()=>{hitI=-1;applySearch(true);});
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applySearch(true);}});
+
+// ---------- editar persona ----------
+let edI=-1,edPh=undefined;
+function openDlg(i){
+  edI=i;edPh=undefined;const p=i>=0?people[i]:{nombre:'',cargo:'',telefono:'',area:'',jefe:'',foto:''};
+  $('#dT').textContent=i>=0?'Editar persona':'Nueva persona';$('#dDel').style.display=i>=0?'':'none';
+  $('#dN').value=p.nombre;$('#dC').value=p.cargo||'';$('#dTel').value=p.telefono||'';$('#dA').value=p.area||'';
+  $('#areas').innerHTML=[...new Set(people.map(x=>x.area).filter(Boolean))].map(a=>'<option value="'+esc(a)+'">').join('');
+  // jefe: cualquiera menos la persona y sus subordinados (evita ciclos)
+  const bad=new Set();if(i>=0){buildForest();const w=n=>{bad.add(n);(n.kids||[]).forEach(w);};w(people[i]);}
+  $('#dJ').innerHTML='<option value="">— Nadie (nivel superior) —</option>'+people.filter(x=>!bad.has(x)).map(x=>'<option'+(norm(x.nombre)===norm(p.jefe)?' selected':'')+'>'+esc(x.nombre)+'</option>').join('');
+  const ph=i>=0?photoOf(p):null;$('#dPh').style.backgroundImage=ph?'url('+ph+')':'none';
+  $('#dlg').classList.add('on');
+}
+async function pickPhoto(f){if(!f)return;const d=await shrink(f);if(d){edPh=d;$('#dPh').style.backgroundImage='url('+d+')';}}
+$('#dFile').onchange=e=>{pickPhoto(e.target.files[0]);e.target.value='';};
+$('#dCam').onchange=e=>{pickPhoto(e.target.files[0]);e.target.value='';};
+$('#dPhX').onclick=()=>{edPh=null;$('#dPh').style.backgroundImage='none';};
+$('#dX').onclick=()=>$('#dlg').classList.remove('on');
+$('#dlg').addEventListener('click',e=>{if(e.target.id==='dlg')$('#dlg').classList.remove('on');});
+$('#dOk').onclick=async()=>{
+  const n=$('#dN').value.trim();if(!n){toast('Escribe el nombre');return;}
+  const dup=people.find((x,k)=>k!==edI&&norm(x.nombre)===norm(n));if(dup){toast('Ya existe una persona con ese nombre');return;}
+  const p=edI>=0?people[edI]:{foto:''};const old=p.nombre;
+  Object.assign(p,{nombre:n,cargo:$('#dC').value.trim(),telefono:$('#dTel').value.trim(),area:$('#dA').value.trim(),jefe:$('#dJ').value});
+  if(old&&norm(old)!==norm(n))people.forEach(x=>{if(norm(x.jefe)===norm(old))x.jefe=n;});
+  if(edPh!==undefined){const oldKeys=[p.foto&&norm(p.foto.replace(/\.[^.]+$/,'')),old&&norm(old)].filter(Boolean);oldKeys.forEach(k=>delete photos[k]);
+    if(edPh){photos[norm(n)]=edPh;p.foto='';}else p.foto='';await kvSet('photos',photos);}
+  else if(old&&norm(old)!==norm(n)&&!p.foto&&photos[norm(old)]){photos[norm(n)]=photos[norm(old)];delete photos[norm(old)];await kvSet('photos',photos);}
+  if(edI<0)people.push(p);
+  people.forEach(x=>delete x.kids);await kvSet('people',people);
+  $('#dlg').classList.remove('on');render();toast(edI>=0?'Cambios guardados':'Persona agregada');
+};
+$('#dDel').onclick=async()=>{const p=people[edI];if(!p||!confirm('¿Eliminar a '+p.nombre+' del organigrama? Sus subordinados pasarán a reportar a '+(p.jefe||'nivel superior')+'.'))return;
+  people.forEach(x=>{if(norm(x.jefe)===norm(p.nombre))x.jefe=p.jefe||'';});people.splice(edI,1);people.forEach(x=>delete x.kids);
+  await kvSet('people',people);$('#dlg').classList.remove('on');render();toast('Persona eliminada');};
+$('#chart').addEventListener('click',e=>{const c=e.target.closest('.p');if(c)openDlg(+c.dataset.i);});
+$('#btnAdd').onclick=()=>openDlg(-1);
+
+// ---------- exportar ----------
+function saveBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);}
+const stamp=()=>new Date().toISOString().slice(0,10);
+async function snapChart(){
+  if(!people.length)throw new Error('Primero carga el Excel');
+  const c=$('#chart');const q=$('#q').value;$('#q').value='';applySearch(false);
+  c.style.transform='none';c.classList.add('light');
+  try{
+    const cards=[...c.querySelectorAll('.p')];const r0=c.getBoundingClientRect();
+    let minX=Infinity,minY=Infinity,maxX=0,maxY=0;const box=new Map();
+    cards.forEach(e=>{const r=e.getBoundingClientRect();const b={x:r.left-r0.left,y:r.top-r0.top,w:r.width,h:r.height};box.set(people[+e.dataset.i],b);minX=Math.min(minX,b.x);minY=Math.min(minY,b.y);maxX=Math.max(maxX,b.x+b.w);maxY=Math.max(maxY,b.y+b.h);});
+    const P=20,S=2;const W=Math.ceil(maxX-minX+2*P),H=Math.ceil(maxY-minY+2*P);
+    const cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;const g=cv.getContext('2d');
+    g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);g.scale(S,S);g.translate(P-minX,P-minY);
+    g.strokeStyle='#888';g.lineWidth=2;g.lineJoin='round';
+    buildForest();
+    people.forEach(p=>{const pb=box.get(p);if(!pb)return;(p.kids||[]).forEach(k=>{const kb=box.get(k);if(!kb)return;
+      const x1=pb.x+pb.w/2,y1=pb.y+pb.h,x2=kb.x+kb.w/2,y2=kb.y,my=y2-11;
+      g.beginPath();g.moveTo(x1,y1);g.lineTo(x1,my);g.lineTo(x2,my);g.lineTo(x2,y2);g.stroke();});});
+    for(const e of cards){const b=box.get(people[+e.dataset.i]);const ci=await html2canvas(e,{scale:S,backgroundColor:null,logging:false});g.drawImage(ci,b.x,b.y,b.w,b.h);}
+    return cv;
+  }
+  finally{c.classList.remove('light');applyZoom();$('#q').value=q;applySearch(false);}
+}
+$('#btnPng').onclick=async()=>{try{toast('Generando imagen…');const cv=await snapChart();cv.toBlob(b=>{saveBlob(b,'Organigrama-'+stamp()+'.png');toast('Imagen en Descargas');},'image/png');}catch(e){toast('Error: '+(e.message||e));}};
+$('#btnPdf').onclick=async()=>{try{toast('Generando PDF…');const cv=await snapChart();
+  const {jsPDF}=window.jspdf;const land=cv.width>=cv.height;const pdf=new jsPDF({unit:'pt',format:'letter',orientation:land?'landscape':'portrait'});
+  const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=24;
+  pdf.setFontSize(14);pdf.setTextColor(30,30,30);pdf.text('Organigrama',m,m+8);pdf.setFontSize(9);pdf.setTextColor(120,120,120);pdf.text('Actualizado '+new Date().toLocaleDateString('es-CL')+' · '+people.length+' personas',pw-m,m+8,{align:'right'});
+  const aw=pw-2*m,ah=ph-2*m-20;const k=Math.min(aw/cv.width,ah/cv.height);const w=cv.width*k,h=cv.height*k;
+  pdf.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',(pw-w)/2,m+20,w,h);
+  saveBlob(pdf.output('blob'),'Organigrama-'+stamp()+'.pdf');toast('PDF en Descargas');}catch(e){toast('Error: '+(e.message||e));}};
+$('#btnXls').onclick=async()=>{if(!people.length){toast('No hay datos');return;}
+  const wb=new ExcelJS.Workbook();const ws=wb.addWorksheet('Equipo');
+  ws.columns=[{header:'Nombre',width:28},{header:'Cargo',width:28},{header:'Teléfono',width:16},{header:'Área / Planta',width:22},{header:'Reporta a',width:28},{header:'Foto',width:22}];
+  people.forEach(p=>ws.addRow([p.nombre,p.cargo,p.telefono,p.area,p.jefe,p.foto]));ws.getRow(1).font={bold:true};
+  saveBlob(new Blob([await wb.xlsx.writeBuffer()],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Equipo-'+stamp()+'.xlsx');toast('Excel actualizado en Descargas');};
+window.EquipoApp={get people(){return people;},set people(v){people=v;render();},openDlg};
+
 (async()=>{people=(await kvGet('people'))||[];photos=(await kvGet('photos'))||{};render();})();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
 </script>
